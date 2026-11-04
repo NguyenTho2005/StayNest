@@ -1,307 +1,321 @@
-# Hướng dẫn Thiết lập & Chạy Demo Dự án StayNest
+# Hướng dẫn Thiết lập, Chạy & Demo Dự án StayNest
 
-Tài liệu này hướng dẫn chi tiết từ đầu (A-Z) cách thiết lập môi trường, tạo và cấu hình cơ sở dữ liệu PostgreSQL trên **Supabase**, khởi chạy backend API Node.js/Express, chạy ứng dụng frontend Flutter và kịch bản demo đầy đủ luồng nghiệp vụ.
+Tài liệu này hướng dẫn chi tiết từ A-Z cách thiết lập môi trường, cấu hình cơ sở dữ liệu **Supabase PostgreSQL**, khởi chạy dự án bằng **Docker** (dành cho người có Docker) hoặc **thủ công** (dành cho người không có Docker), cách kết nối và xuất file APK lên **Điện thoại Android thật**, cùng **kịch bản Demo chuẩn 100 màn hình Figma**.
 
 ---
 
 ## 📋 Mục lục
 1. [Yêu cầu hệ thống](#1-yêu-cầu-hệ-thống)
-2. [Thiết lập Database PostgreSQL trên Supabase](#2-thiết-lập-database-postgresql-trên-supabase)
-3. [Cấu hình và khởi chạy Backend API](#3-cấu-hình-và-khởi-chạy-backend-api)
-4. [Cấu hình và khởi chạy Ứng dụng Flutter](#4-cấu-hình-và-khởi-chạy-ứng-dụng-flutter)
-5. [Kịch bản Demo chi tiết từng bước](#5-kịch-bản-demo-chi-tiết-từng-bước)
-6. [Checklist an toàn trước khi đẩy mã nguồn lên Git](#6-checklist-an-toàn-trước-khi-đẩy-mã-nguồn-lên-git)
-7. [Khắc phục sự cố thường gặp (Troubleshooting)](#7-khắc-phục-sự-cố-thường-gặp-troubleshooting)
+2. [Cấu hình Cơ sở dữ liệu Supabase PostgreSQL](#2-cấu-hình-cơ-sở-dữ-liệu-supabase-postgresql)
+3. [PHƯƠNG ÁN A: Chạy dự án bằng DOCKER (Khuyên dùng - 1 Lệnh duy nhất)](#3-phương-án-a-chạy-dự-án-bằng-docker-khuyên-dùng---1-lệnh-duy-nhất)
+4. [PHƯƠNG ÁN B: Chạy dự án KHÔNG DÙNG DOCKER (Thủ công)](#4-phương-án-b-chạy-dự-án-không-dùng-docker-thủ-công)
+5. [PHƯƠNG ÁN C: Chạy và kết nối với ĐIỆN THOẠI ANDROID (Xuất file APK)](#5-phương-án-c-chạy-và-kết-nối-với-điện-thoại-android-xuất-file-apk)
+6. [Kịch bản Demo chi tiết từng bước (Chuẩn 100 màn hình Figma)](#6-kịch-bản-demo-chi-tiết-từng-bước-chuẩn-100-màn-hình-figma)
+7. [Tài khoản Demo & Đăng ký người dùng mới](#7-tài-khoản-demo--đăng-ký-người-dùng-mới)
+8. [Checklist an toàn trước khi Push lên Git](#8-checklist-an-toàn-trước-khi-push-lên-git)
+9. [Khắc phục sự cố thường gặp (Troubleshooting)](#9-khắc-phục-sự-cố-thường-gặp-troubleshooting)
 
 ---
 
 ## 1. Yêu cầu hệ thống
 
-Trước khi bắt đầu, đảm bảo máy tính đã cài đặt:
-- **Node.js**: Phiên bản 18.x hoặc 20.x trở lên (khuyên dùng LTS 20+) kèm `npm`.
-- **Flutter SDK**: Phiên bản 3.22.x trở lên và Dart SDK tương ứng.
-- **Trình duyệt Google Chrome**: Dùng để chạy và kiểm thử Flutter Web.
-- **Tài khoản Supabase**: Miễn phí tại [https://supabase.com](https://supabase.com).
+Tùy theo phương án chạy mà bạn chọn, máy tính cần đáp ứng:
+
+| Phương án | Yêu cầu tối thiểu |
+| :--- | :--- |
+| **Dùng Docker** | • Docker Engine 24+ & Docker Compose v2+<br>• Trình duyệt Chrome / Edge / Firefox |
+| **Không dùng Docker** | • Node.js LTS 20+ kèm `npm`<br>• Flutter SDK 3.22+ (kênh stable)<br>• Trình duyệt Google Chrome |
+| **Chạy trên Android** | • Android SDK 34+ (có `adb`)<br>• Cáp USB hoặc cùng mạng Wi-Fi với máy tính |
 
 ---
 
-## 2. Thiết lập Database PostgreSQL trên Supabase
+## 2. Cấu hình Cơ sở dữ liệu Supabase PostgreSQL
 
-Dự án StayNest sử dụng cơ sở dữ liệu PostgreSQL chuẩn với các bảng lưu trữ người dùng, điểm đến, cơ sở lưu trú, loại phòng, đơn đặt phòng, voucher và thanh toán demo.
+Dự án StayNest sử dụng cơ sở dữ liệu PostgreSQL chuẩn để lưu trữ người dùng, homestay/khách sạn, loại phòng, đơn đặt phòng, voucher và thanh toán.
 
-### Bước 2.1: Tạo Project mới trên Supabase
-1. Đăng nhập vào [Supabase Dashboard](https://supabase.com/dashboard).
-2. Nhấn nút **New Project**.
-3. Điền các thông tin:
-   - **Name**: `staynest-db` (hoặc tên tùy chọn).
-   - **Database Password**: Nhập mật khẩu mạnh và **ghi nhớ mật khẩu này**.
-     > *Mẹo: Nếu mật khẩu có chứa các ký tự đặc biệt (ví dụ `@`, `:`, `/`, `#`, `%`), khi đưa vào chuỗi kết nối URI bạn cần URL-encode ký tự đó.*
-   - **Region**: Chọn khu vực gần bạn nhất (ví dụ: `Singapore - ap-southeast-1`).
-   - **Pricing Plan**: Chọn Free Tier.
-4. Nhấn **Create new project** và đợi 1-2 phút để Supabase chuẩn bị cụm cơ sở dữ liệu.
-
-### Bước 2.2: Lấy Connection String (URI)
-1. Trong màn hình project trên Supabase, vào menu bên trái: **Project Settings** (biểu tượng bánh răng) ➜ chọn **Database**.
-2. Kéo xuống phần **Connection string**:
-   - Chọn tab **URI**.
-   - Chọn chế độ **Direct Connection** (cổng `5432`) hoặc **Session Pooler** (cổng `5432` / `6543`).
-   - Chuỗi kết nối có dạng:
+### Bước 2.1: Lấy thông tin từ Supabase Dashboard
+1. Đăng nhập [Supabase Dashboard](https://supabase.com/dashboard) và mở project của bạn.
+2. Vào **Project Settings** (biểu tượng bánh răng) ➜ **Database**:
+   - Sao chép chuỗi kết nối **URI** (Direct Connection port `5432` hoặc Pooler port `6543`):
      ```text
-     postgresql://postgres:[YOUR-PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+     postgresql://postgres:[MAT_KHAU_CUA_BAN]@db.[PROJECT-REF].supabase.co:5432/postgres
      ```
-   - Thay thế `[YOUR-PASSWORD]` bằng mật khẩu bạn đã đặt ở Bước 2.1.
-
-### Bước 2.3: Tải chứng chỉ SSL (CA Certificate)
-Supabase yêu cầu kết nối bảo mật qua SSL/TLS:
-1. Cũng tại trang **Project Settings** ➜ **Database**, tìm mục **SSL Configuration**.
-2. Nhấn nút **Download certificate** để tải file chứng chỉ về máy (tên mặc định thường là `prod-ca-2021.crt`).
-3. Đổi tên hoặc di chuyển file này vào thư mục `backend/` của dự án StayNest:
+   - Tại mục **SSL Configuration**, nhấn nút **Download certificate** để tải file chứng chỉ SSL (thường tên là `prod-ca-2021.crt`).
+3. Đổi tên và di chuyển file chứng chỉ vào thư mục backend:
    ```text
    backend/supabase-ca.crt
    ```
-   *(File này đã được khai báo trong `.gitignore` để không bao giờ bị lộ lên kho mã nguồn Git).*
 
-### Bước 2.4: Khởi tạo bảng dữ liệu (Migrations & Seed)
-Bạn có thể khởi tạo schema bằng 1 trong 2 cách sau:
-
-#### Cách A: Chạy migration tự động bằng lệnh CLI (Khuyên dùng)
-Sau khi cấu hình file `backend/.env` (xem Mục 3), bạn chỉ cần chạy lệnh từ terminal dự án:
-```bash
-# 1. Chạy migration tạo bảng
-npm run migrate --prefix backend
-
-# 2. Nạp dữ liệu mẫu (Homestay, Phòng, Tiện nghi, Voucher)
-ALLOW_DEMO_SEED=1 npm run seed --prefix backend
-```
-
-#### Cách B: Chạy qua giao diện Supabase SQL Editor
-1. Trên Supabase Dashboard, bấm vào mục **SQL Editor** ở thanh menu bên trái.
-2. Bấm **New query**.
-3. Mở file [backend/db/migrations/001_initial.sql](file:///media/tho/NEW%20DATA/StayNest/backend/db/migrations/001_initial.sql) trong project, sao chép toàn bộ nội dung và dán vào SQL Editor.
-4. Nhấn nút **Run** (màu xanh lá). Sau khi hoàn thành, toàn bộ 21 bảng nghiệp vụ sẽ được tạo trong schema `public`.
-5. Vào menu **Table Editor** trên Supabase để xác nhận các bảng như `users`, `properties`, `room_types`, `bookings` đã xuất hiện.
-
----
-
-## 3. Cấu hình và khởi chạy Backend API
-
-Backend StayNest được xây dựng bằng Node.js + Express, xử lý toàn bộ logic nghiệp vụ, bảo mật, xác thực người dùng và kết nối trực tiếp với PostgreSQL.
-
-### Bước 3.1: Cài đặt dependencies
-Từ thư mục gốc của dự án, chạy:
-```bash
-npm install --prefix backend
-```
-
-### Bước 3.2: Tạo file cấu hình `backend/.env`
-Tạo file `backend/.env` bằng cách nhân bản từ file mẫu:
+### Bước 2.2: Tạo file cấu hình `backend/.env`
+Tạo file `backend/.env` từ file mẫu:
 ```bash
 cp backend/.env.example backend/.env
 ```
-
-Mở file `backend/.env` và cập nhật thông tin thực tế:
+Mở file `backend/.env` và cập nhật thông tin:
 ```dotenv
-HOST=127.0.0.1
+HOST=0.0.0.0
 PORT=3000
 NODE_ENV=development
 
-# Chuỗi kết nối PostgreSQL Supabase đã lấy ở Mục 2.2
-DATABASE_URL=postgresql://postgres:MAT_KHAU_CUA_BAN@db.hjxhakavxfgxuovmshae.supabase.co:5432/postgres
+# Thay [MAT_KHAU] bằng mật khẩu database Supabase của bạn
+DATABASE_URL=postgresql://postgres:[MAT_KHAU]@db.hjxhakavxfgxuovmshae.supabase.co:5432/postgres
 
-# Bắt buộc bật SSL cho database lưu trữ qua mạng Internet
 DATABASE_SSL=1
-
-# Đường dẫn tuyệt đối tới file chứng chỉ đã tải ở Mục 2.3
 DATABASE_SSL_CA_FILE=/media/tho/NEW DATA/StayNest/backend/supabase-ca.crt
 
-# Tắt chế độ in-memory (PGlite) để sử dụng PostgreSQL thật
 STAYNEST_EMBEDDED_DEMO=0
-
-# Danh sách Origin được phép truy cập CORS từ Flutter Web
 CORS_ORIGINS=http://127.0.0.1:8080,http://localhost:8080,http://127.0.0.1:8090,http://127.0.0.1:8087
-
-# Cho phép seed dữ liệu mẫu trong môi trường dev
 ALLOW_DEMO_SEED=1
-SEED_DEMO_PASSWORD=StayNestDemo@2026
 ```
 
-> **Lưu ý an toàn:** File `backend/.env` chứa mật khẩu thực tế nên đã được cấu hình trong `.gitignore`. Tuyệt đối không commit file này lên Git.
-
-### Bước 3.3: Chạy kiểm tra và khởi động Server
-1. Chạy bộ kiểm thử tự động của backend:
-   ```bash
-   npm test --prefix backend
-   ```
-   *(Đảm bảo toàn bộ 24/24 unit & integration test đều Passed).*
-
-2. Khởi động máy chủ backend:
-   ```bash
-   # Chạy chế độ development tự động reload khi sửa code:
-   npm run dev --prefix backend
-
-   # Hoặc chạy chế độ thông thường:
-   npm start --prefix backend
-   ```
-   Khi khởi động thành công, màn hình sẽ thông báo:
-   ```text
-   StayNest API listening on http://127.0.0.1:3000
-   ```
-
-3. Mở một terminal mới để kiểm tra trạng thái hoạt động:
-   ```bash
-   curl http://127.0.0.1:3000/api/v1/health
-   # Trả về: {"status":"ok","service":"staynest-api"}
-
-   curl http://127.0.0.1:3000/api/v1/health/ready
-   # Trả về: {"status":"ready"}
-   ```
+> **Ghi chú:** File `backend/.env` và `backend/supabase-ca.crt` đã được đưa vào `.gitignore` để bảo mật, không bao giờ bị đẩy lên Git.
 
 ---
 
-## 4. Cấu hình và khởi chạy Ứng dụng Flutter
+## 3. PHƯƠNG ÁN A: Chạy dự án bằng DOCKER (Khuyên dùng - 1 Lệnh duy nhất)
 
-Frontend StayNest được thiết kế chuẩn Mobile-first theo Figma Page 1, sử dụng Flutter, Riverpod và GoRouter. Khi mở trên màn hình rộng (Desktop Web / Tablet), giao diện tự động căn giữa trong mobile frame 390px chuẩn điện thoại.
+Nếu máy tính của bạn hoặc người chấm/đồng nghiệp **đã cài đặt Docker**, đây là cách tiện lợi và ổn định nhất. Không cần cài Flutter, không cần cài Node.js trên máy trạm.
 
-### Bước 4.1: Cài đặt gói thư viện Flutter
-Từ thư mục gốc dự án:
+### 🚀 Khởi chạy hệ sinh thái StayNest
+Mở terminal tại thư mục gốc của dự án và chạy:
+
 ```bash
-flutter pub get
+docker compose up --build -d
 ```
 
-### Bước 4.2: Khởi chạy trên trình duyệt Web (Khuyên dùng cho Demo)
-Chạy lệnh sau để khởi chạy ứng dụng web trên cổng `8080` kết nối tới Backend API:
+Docker sẽ tự động:
+1. Build container **Backend API** (Node.js 20, tự động map thư mục ảnh `/media`).
+2. Build container **Frontend** (Flutter Web chạy trên nền Nginx).
+3. **Nginx Reverse Proxy:** Nginx trên cổng `8080` tự động chuyển tiếp toàn bộ request `/api/` và `/media/` về Backend container ➜ **Loại bỏ 100% lỗi CORS và lỗi kết nối mạng**.
+
+### 🌐 Trải nghiệm ứng dụng:
+- **Giao diện Web:** Mở trình duyệt tại 👉 [http://localhost:8080](http://localhost:8080)
+- **Kiểm tra trạng thái Backend:** 👉 [http://localhost:3000/api/v1/health/ready](http://localhost:3000/api/v1/health/ready) (Trả về `{"status":"ready"}`)
+
+### 🛠️ Chạy Offline hoàn toàn (Không cần kết nối Supabase):
+Nếu bạn đang ở nơi không có mạng Internet hoặc muốn dùng PostgreSQL cục bộ trong Docker:
 ```bash
+docker compose --profile local-db up --build -d
+```
+Container `staynest-postgres` sẽ tự động khởi động trên cổng 5432 và lưu trữ dữ liệu bền vững.
+
+### 🛑 Các lệnh quản lý Docker:
+```bash
+# Xem logs thời gian thực của cả hệ thống:
+docker compose logs -f
+
+# Xem logs riêng của backend:
+docker logs -f staynest-backend
+
+# Dừng toàn bộ hệ thống:
+docker compose down
+```
+
+---
+
+## 4. PHƯƠNG ÁN B: Chạy dự án KHÔNG DÙNG DOCKER (Thủ công)
+
+Dành cho máy tính phát triển thông thường đã có sẵn **Node.js** và **Flutter SDK**. Bạn cần mở **2 cửa sổ Terminal**:
+
+### 🔹 Terminal 1: Khởi động Backend API
+```bash
+# 1. Cài đặt dependencies (chỉ cần chạy lần đầu)
+npm install --prefix backend
+
+# 2. Khởi chạy server API (chế độ development tự reload)
+cd backend && npm run dev
+```
+> Khi màn hình báo: `StayNest API listening on http://0.0.0.0:3000` là backend đã sẵn sàng.
+
+### 🔹 Terminal 2: Khởi động Flutter Web
+```bash
+# 1. Lấy packages Flutter (chỉ cần chạy lần đầu)
+flutter pub get
+
+# 2. Chạy ứng dụng trên Chrome
 flutter run -d chrome --web-port=8080 --dart-define=STAYNEST_API_URL=http://127.0.0.1:3000
 ```
-
-> **Giải thích tham số:**
-> - `-d chrome`: Mở trực tiếp bằng Google Chrome.
-> - `--web-port=8080`: Cố định cổng 8080 để khớp với cấu hình CORS trong `backend/.env`.
-> - `--dart-define=STAYNEST_API_URL=http://127.0.0.1:3000`: Chỉ định URL của backend API.
-
-### Bước 4.3: Khởi chạy trên thiết bị Android / Giả lập
-Nếu chạy trên Android Emulator:
-```bash
-# Trên Android Emulator, 10.0.2.2 là địa chỉ IP trỏ về localhost máy trạm:
-flutter run -d android --dart-define=STAYNEST_API_URL=http://10.0.2.2:3000
-```
+> Trình duyệt Chrome sẽ tự động bật lên với giao diện khung điện thoại 390px chuẩn mobile app căn giữa màn hình.
 
 ---
 
-## 5. Kịch bản Demo chi tiết từng bước
+## 5. PHƯƠNG ÁN C: Chạy và kết nối với ĐIỆN THOẠI ANDROID (Xuất file APK)
 
-Dưới đây là kịch bản chuẩn để trình diễn toàn bộ tính năng của ứng dụng:
+Ứng dụng StayNest đã được thiết kế chuẩn Figma Mobile-first, tích hợp sẵn quyền Internet và cấu hình mạng Android.
 
-### 🌟 Bước 1: Trải nghiệm Giao diện Khám phá (Explore & Discovery)
-1. Truy cập ứng dụng tại `http://127.0.0.1:8080`.
-2. Quan sát giao diện:
-   - Trên desktop browser, ứng dụng được bọc trong khung điện thoại 390px thanh lịch ở giữa màn hình.
-   - Banner chào mừng, thanh tìm kiếm nhanh, các tab gợi ý điểm đến nổi bật (Hội An, Đà Lạt, Đà Nẵng).
-3. Thử nghiệm tương tác:
-   - Bấm vào biểu tượng điểm đến Đà Nẵng hoặc Đà Lạt.
-   - Bấm nút **"Xem tất cả"** hoặc click trực tiếp vào các card chỗ ở như **"Pine Hill Homestay"** hoặc **"Ocean Pearl Hotel"**.
-
-### 🌟 Bước 2: Xem Chi tiết Chỗ ở giàu thông tin (Property Detail)
-1. Nhấp chọn **"Mây Homestay"** hoặc **"Pine Hill Homestay"**:
-   - Bộ sưu tập ảnh thực tế (gallery).
-   - Đánh giá sao, số lượt nhận xét, địa chỉ chi tiết.
-   - Danh sách tiện ích đầy đủ (Wi-Fi tốc độ cao, điều hòa, bãi đỗ xe,...).
-   - Chính sách hủy phòng minh bạch và cam kết đặt phòng an toàn.
-   - Vị trí trên bản đồ minh họa.
-2. Bấm nút **"Chọn phòng"** ở thanh ghim dưới cùng (Sticky bottom CTA) hoặc trong danh sách phòng.
-
-### 🌟 Bước 3: Lựa chọn phòng & Cấu hình Đặt phòng (Room Selection)
-1. Màn hình danh sách phòng mở ra với dữ liệu động:
-   - Hiển thị tên chỗ ở và số đêm lưu trú trên thanh tiêu đề.
-   - Xem các hạng phòng: *Phòng Studio Ban Công View Vườn*, *Phòng Đồi Thông View Mây*,...
-   - Xem thông tin số khách tối đa, loại giường và giá tiền từng đêm bằng tiền VND rõ ràng.
-2. Bấm chọn loại phòng mong muốn để chuyển sang màn hình **Tóm tắt Đặt phòng (Booking Summary)**.
-
-### 🌟 Bước 4: Đăng ký & Đăng nhập Tài khoản mới (Authentication)
-1. Tại bước nhập thông tin khách hàng, nếu chưa đăng nhập:
-   - Chọn chuyển sang màn hình **Đăng ký tài khoản (Sign Up)**.
-2. Điền thông tin:
-   - **Họ và tên**: Ví dụ `Nguyễn Văn An`
-   - **Email**: `an.test@example.com`
-   - **Số điện thoại**: `0901234567`
-   - **Mật khẩu**: `password123` (tối thiểu 8 ký tự)
-   - Tích chọn đồng ý Điều khoản dịch vụ.
-3. Bấm **"Đăng ký"**:
-   - Hệ thống tự động mã hóa mật khẩu, lưu người dùng vào bảng `users` trên Supabase và tạo phiên đăng nhập an toàn.
-   - Tự động điền họ tên, email, số điện thoại của bạn vào hồ sơ đặt phòng.
-
-### 🌟 Bước 5: Áp mã Voucher & Thanh toán Demo (Payment & My Trips)
-1. Tại màn hình tính tiền và thanh toán:
-   - Xem bảng chiết tính chi phí minh bạch (giá phòng x số đêm + phí dịch vụ).
-   - Chọn áp dụng mã giảm giá có sẵn (ví dụ: `CHAOBANMOI` hoặc `STAYNEST100K`).
-2. Chọn phương thức thanh toán demo:
-   - Thẻ tín dụng/ghi nợ quốc tế (Demo).
-   - Ví điện tử MoMo / ZaloPay (Demo).
-   - Chuyển khoản ngân hàng QR (Demo).
-3. Bấm nút **"Thanh toán ngay"**:
-   - Hệ thống ghi nhận giao dịch demo, trừ số lượng phòng khả dụng và tạo mã đặt phòng thành công.
-4. Màn hình hiển thị thông báo **Đặt phòng thành công** kèm mã vé và chi tiết nhận phòng.
-5. Chuyển sang tab **"Chuyến đi" (My Trips)** trên thanh điều hướng dưới đáy màn hình:
-   - Bạn sẽ thấy đơn đặt phòng vừa tạo xuất hiện ở trạng thái **"Đã xác nhận"**.
-   - Vào Supabase Dashboard ➜ **Table Editor** ➜ chọn bảng `bookings` để kiểm chứng dữ liệu thực tế vừa được lưu trữ.
+### 📍 Vị trí file APK đã build sẵn trong dự án:
+- **Bản Release (Tối ưu ~63MB, cài đặt cực nhanh):**
+  ```text
+  build/app/outputs/flutter-apk/app-release.apk
+  ```
+- **Bản Debug (~171MB):**
+  ```text
+  build/app/outputs/flutter-apk/app-debug.apk
+  ```
 
 ---
 
-## 6. Checklist an toàn trước khi đẩy mã nguồn lên Git
+### 📱 Cách 1: Kết nối trực tiếp qua cáp USB (Nhanh nhất & Dễ nhất khi lập trình)
 
-Trước khi thực hiện `git add`, `git commit` và `git push`, hãy đảm bảo tuân thủ các nguyên tắc bảo mật sau:
+1. **Bật chế độ gỡ lỗi trên điện thoại Android:**
+   - Vào **Cài đặt (Settings)** ➜ **Thông tin điện thoại (About phone)** ➜ Nhấn 7 lần liên tục vào **Số bản dựng (Build number)** để bật *Tùy chọn nhà phát triển (Developer options)*.
+   - Quay lại Cài đặt ➜ **Tùy chọn nhà phát triển** ➜ Bật **Gỡ lỗi USB (USB Debugging)**.
+2. **Cắm cáp USB nối điện thoại với máy tính:**
+   - Trên màn hình điện thoại hiện pop-up: *"Cho phép gỡ lỗi USB từ máy tính này?"* ➜ Chọn **Luôn cho phép**.
+3. **Mở terminal máy tính chạy 2 lệnh sau:**
+   ```bash
+   # Bước 1: Forward cổng backend qua cáp USB (cực kỳ quan trọng để app trên điện thoại gọi thẳng backend máy tính):
+   adb reverse tcp:3000 tcp:3000
 
-### ✅ Các file TUYỆT ĐỐI KHÔNG commit lên Git:
-- [x] `backend/.env`: Chứa mật khẩu cơ sở dữ liệu thật và các biến môi trường nhạy cảm.
-- [x] `backend/supabase-ca.crt` (hoặc các file đuôi `*.crt`, `*.pem`, `*.key`): File chứng chỉ TLS/SSL.
-- [x] `backend/node_modules/`: Thư viện cài đặt của Node.js.
-- [x] `.dart_tool/`, `build/`: Thư mục build của Flutter.
-
-### ✅ Các file NÊN commit:
-- [x] `backend/.env.example`: File mẫu (chỉ chứa placeholder, không chứa mật khẩu thật).
-- [x] Toàn bộ mã nguồn `lib/`, `backend/src/`, `backend/db/migrations/`.
-- [x] `SETUP.md` và `README.md`.
-- [x] `.gitignore`.
-
-### 🔍 Lệnh kiểm tra an toàn nhanh:
-```bash
-# Kiểm tra các file đang chuẩn bị commit:
-git status
-
-# Đảm bảo không thấy xuất hiện .env hay .crt:
-git status | grep -E "(\.env|\.crt|\.pem|\.key)"
-# (Nếu lệnh trên không in ra kết quả gì là hoàn toàn an toàn!)
-```
+   # Bước 2: Cài đặt trực tiếp file APK lên điện thoại:
+   adb install -r "build/app/outputs/flutter-apk/app-release.apk"
+   ```
+   *(Hoặc bạn có thể gõ `flutter run` để chạy trực tiếp và dùng tính năng Hot Reload trên điện thoại).*
 
 ---
 
-## 7. Khắc phục sự cố thường gặp (Troubleshooting)
+### 📡 Cách 2: Cài độc lập qua Wi-Fi (Không cần cắm cáp USB)
+
+Nếu bạn muốn gửi file APK cho bạn bè hoặc cài lên điện thoại dùng qua mạng không dây:
+
+1. **Điều kiện:** Điện thoại và máy tính phải **kết nối cùng 1 mạng Wi-Fi**.
+2. **Lấy IP Wi-Fi của máy tính:**
+   - Trên Linux/macOS: Chạy `ip route get 1.1.1.1` hoặc `ifconfig` (Ví dụ IP máy là `192.168.1.215`).
+   - Trên Windows: Chạy `ipconfig`.
+3. **Build file APK trỏ về IP máy tính:**
+   ```bash
+   flutter build apk --release --dart-define=STAYNEST_API_URL=http://192.168.1.215:3000
+   ```
+4. **Cài đặt lên điện thoại:**
+   - Gửi file `build/app/outputs/flutter-apk/app-release.apk` qua điện thoại (bằng Zalo, Google Drive, hoặc Bluetooth).
+   - Nhấn vào file APK trên điện thoại ➜ Chọn **Cài đặt** (Nếu Android cảnh báo bảo mật, chọn *Vẫn cài đặt / Install anyway*).
+   - Đảm bảo Backend trên máy tính đang chạy (`npm run dev` trong thư mục `backend/`).
+
+---
+
+## 6. Kịch bản Demo chi tiết từng bước (Chuẩn 100 màn hình Figma)
+
+StayNest tái hiện chính xác **100 màn hình Figma** (SCR-001 đến SCR-100). Sau đây là kịch bản dẫn dắt buổi demo trôi chảy:
+
+### 🌟 Luồng 1: Khởi động & Onboarding (SCR-001 ➜ SCR-005)
+1. Mở ứng dụng lần đầu tiên:
+   - **SCR-001 (Splash):** Hiển thị màn hình Splash màu xanh thương hiệu teal với logo StayNest trong 1.2 giây.
+   - **SCR-002, SCR-003, SCR-004:** Trượt qua 3 màn hình Onboarding giới thiệu tính năng tìm kiếm homestay, đặt phòng linh hoạt, ưu đãi độc quyền.
+   - Có thể bấm **"Bỏ qua"** bất cứ lúc nào hoặc bấm **"Tiếp tục"** qua từng slide.
+   - **SCR-005 (Welcome):** Màn hình chào mừng với 2 nút Đăng nhập / Đăng ký hoặc Khám phá ngay.
+2. *Lưu ý:* Hệ thống tự động lưu trạng thái hoàn thành Onboarding bằng bộ nhớ an toàn (`FlutterSecureStorage`). Các lần mở app tiếp theo sẽ đi thẳng từ Splash vào Trang chủ (SCR-006).
+
+---
+
+### 🌟 Luồng 2: Khám phá & Bộ lọc tìm kiếm 2 chặng (SCR-006 ➜ SCR-031 ➜ SCR-028 ➜ SCR-029)
+1. Tại Trang chủ:
+   - Thanh tìm kiếm nhanh "Tìm chỗ ở".
+   - Chip điểm đến nhanh (Hội An, Đà Nẵng, Đà Lạt).
+   - Danh sách chỗ ở nổi bật: **Mây Homestay**, **Pine Hill Homestay**, **Ocean Pearl Hotel**.
+2. Nhấn vào thanh tìm kiếm hoặc nút **"Xem tất cả"** ➜ Chuyển tới **SCR-031 (Search Results)**.
+3. Bấm nút **"Lọc" (Filter chip)**:
+   - Mở **SCR-028 (Bộ lọc Giá & Loại chỗ ở)**: Kéo chọn khoảng giá (ví dụ: 500.000đ - 2.500.000đ), chọn loại chỗ ở: Homestay / Khách sạn / Căn hộ.
+   - Bấm nút **"Tiếp tục"** ➜ Chuỗi điều hướng thông minh mở tiếp **SCR-029 (Bộ lọc Tiện nghi)**.
+   - Chọn các tiện nghi: Wi-Fi, Bể bơi, Cho phép thú cưng, Bếp,...
+   - Bấm **"Xem kết quả"** ➜ Quay lại **SCR-031** với danh sách phòng được lọc chuẩn xác, badge số lượng bộ lọc đang hoạt động được hiển thị sinh động.
+
+---
+
+### 🌟 Luồng 3: Chi tiết Chỗ ở ➜ Chọn phòng ➜ Đặt phòng ➜ Thanh toán (SCR-037 ➜ SCR-055)
+1. Bấm vào bất kỳ card chỗ ở nào (ví dụ: **Pine Hill Homestay** hoặc **Mây Homestay**):
+   - Mở màn hình chi tiết giàu thông tin: Bộ sưu tập ảnh (Gallery), đánh giá sao, bản đồ vị trí, chính sách hủy phòng, danh sách tiện nghi và sticky CTA bar ở đáy màn hình.
+2. Bấm **"Chọn phòng"**:
+   - Danh sách loại phòng mở ra với giá tiền và số khách tối đa.
+   - Bấm **"Chọn phòng này"** ➜ Chuyển sang màn hình Tóm tắt đặt phòng (Booking Summary).
+3. Đăng nhập hoặc Đăng ký:
+   - Nếu chưa đăng nhập, chọn Đăng ký tài khoản mới: Nhập Họ tên, Email, Số điện thoại, Mật khẩu. Bấm Đăng ký -> Tài khoản được tạo và lưu ngay vào database Supabase PostgreSQL!
+   - Thông tin cá nhân tự động điền sẵn vào đơn đặt phòng mà không cần nhập lại.
+4. Báo giá & Thanh toán:
+   - Hệ thống tự động tính chiết tính giá phòng theo số đêm (VND chuẩn, không bao giờ flash 0đ).
+   - Chọn phương thức thanh toán demo (Thẻ ngân hàng / MoMo / Chuyển khoản QR).
+   - Bấm **"Thanh toán ngay"** ➜ Nhận thông báo **Đặt phòng thành công (SCR-055)** kèm mã đặt phòng (Booking ID).
+
+---
+
+### 🌟 Luồng 4: Quản lý Chuyến đi & Các subflow mở rộng (SCR-081 ➜ SCR-100)
+Chuyển sang tab **"Chuyến đi" (Trips)** ở thanh điều hướng dưới đáy màn hình:
+1. **SCR-081 & SCR-082:** Hiển thị danh sách chuyến đi đã đặt với badge "Đã xác nhận". Nhấn để mở Chi tiết đặt phòng.
+2. Từ chi tiết đặt phòng, bấm trải nghiệm các subflow:
+   - **SCR-083 (Voucher xác nhận):** Xem vé xác nhận phòng điện tử có mã vạch / QR code.
+   - **SCR-084 (Chỉ đường):** Xem bản đồ và chỉ dẫn đường đi tới homestay.
+   - **SCR-085 ➜ SCR-086 (Đổi ngày lưu trú):** Chọn ngày nhận/trả phòng mới và nhận kết quả xác nhận đổi lịch.
+   - **SCR-087 ➜ SCR-090 (Hủy phòng & Hoàn tiền):** Xem chính sách hoàn tiền ➜ Chọn lý do hủy ➜ Xác nhận hủy phòng và tính toán số tiền hoàn trả minh bạch.
+   - **SCR-095 (Đánh giá chuyến đi):** Viết nhận xét và chấm điểm sao sau kỳ nghỉ.
+3. Nếu chưa có chuyến đi nào, tab Chuyến đi sẽ hiển thị màn hình trống thân thiện **SCR-099** với nút bấm *"Khám phá chỗ ở"* đưa người dùng về trang chủ.
+
+---
+
+### 🌟 Luồng 5: Menu bí mật Debug Figma Gallery (`/debug/figma-screens`)
+Dành riêng cho giảng viên, hội đồng chấm điểm hoặc tester kiểm tra toàn bộ 100 màn hình:
+- Trong trình duyệt web, gõ thẳng đường dẫn:
+  👉 **`http://localhost:8080/debug/figma-screens`**
+- Giao diện tra cứu 100 màn hình Figma được phân thành 6 nhóm danh mục:
+  1. *Khởi động & Xác thực (SCR-001 đến SCR-027)*
+  2. *Khám phá & Bộ lọc (SCR-028 đến SCR-036)*
+  3. *Chi tiết & Đặt phòng (SCR-037 đến SCR-060)*
+  4. *Yêu thích & Trò chuyện (SCR-061 đến SCR-080)*
+  5. *Chuyến đi & Hậu đặt phòng (SCR-081 đến SCR-100)*
+  6. *Công cụ Debug nhanh:* Nút Reset cờ Onboarding (để xem lại màn Splash), Nút Đánh dấu hoàn thành, Nút Xóa bộ lọc.
+
+---
+
+## 7. Tài khoản Demo & Đăng ký người dùng mới
+
+Hệ thống hỗ trợ cả đăng nhập bằng tài khoản mẫu hoặc tự tạo tài khoản mới:
+
+### 👤 Tài khoản mẫu có sẵn trong database:
+- **Email:** `demo@staynest.local` (hoặc `an.nguyen@example.com`)
+- **Mật khẩu:** `DemoPassword123!` (hoặc `password123`)
+
+### 📝 Tự đăng ký tài khoản mới:
+Tại màn hình Đăng ký, nhập bất kỳ Email và Số điện thoại hợp lệ. Hệ thống sẽ:
+1. Mã hóa mật khẩu bảo mật bằng chuẩn `crypto.scryptSync`.
+2. Ghi trực tiếp bản ghi vào bảng `users` trên Supabase PostgreSQL.
+3. Tự động duy trì phiên đăng nhập sau khi tắt mở lại ứng dụng.
+
+---
+
+## 8. Checklist an toàn trước khi Push lên Git
+
+Trước khi thực hiện `git push`, hãy kiểm tra nhanh danh sách an toàn:
+
+- [x] Không commit file mật khẩu: `backend/.env`
+- [x] Không commit chứng chỉ: `backend/supabase-ca.crt`
+- [x] Không commit thư viện: `backend/node_modules/`
+- [x] Không commit file build nặng: `.dart_tool/`, `build/`
+- [x] Đã cập nhật file mẫu: `backend/.env.example`
+- [x] Toàn bộ test case đều passed:
+  ```bash
+  npm test --prefix backend
+  flutter test
+  flutter analyze lib test
+  ```
+
+---
+
+## 9. Khắc phục sự cố thường gặp (Troubleshooting)
 
 ### 1. Lỗi `ClientException: Failed to fetch, uri=http://127.0.0.1:3000/...`
-- **Nguyên nhân:** Máy chủ backend chưa được khởi chạy hoặc cổng 3000 bị chặn.
-- **Cách xử lý:** Mở một cửa sổ terminal mới và chạy:
-  ```bash
-  npm start --prefix backend
-  ```
-  Đảm bảo thấy thông báo `StayNest API listening on http://127.0.0.1:3000`.
+- **Nguyên nhân:** Chưa bật backend server hoặc port 3000 bị chặn.
+- **Cách xử lý:** 
+  - Nếu dùng Docker: Đảm bảo chạy `docker compose up -d` (Nginx tự động proxy giúp tránh hoàn toàn lỗi này).
+  - Nếu chạy thủ công: Mở terminal chạy `cd backend && npm run dev` trước khi mở Flutter.
 
-### 2. Lỗi `SELF_SIGNED_CERT_IN_CHAIN` khi kết nối Supabase
-- **Nguyên nhân:** Node.js từ chối chứng chỉ SSL của bên thứ ba khi thiếu chứng chỉ CA gốc của Supabase.
-- **Cách xử lý:** Đảm bảo bạn đã tải file `supabase-ca.crt` về `backend/` và cấu hình trong `backend/.env`:
-  ```dotenv
-  DATABASE_SSL=1
-  DATABASE_SSL_CA_FILE=/đường/dẫn/tới/backend/supabase-ca.crt
-  ```
+### 2. Trên điện thoại Android không tải được danh sách phòng / báo lỗi mạng
+- **Nguyên nhân:** Điện thoại chưa kết nối được tới máy tính qua cổng 3000.
+- **Cách xử lý:**
+  - Nếu cắm cáp USB: Mở terminal chạy lệnh `adb reverse tcp:3000 tcp:3000`.
+  - Nếu dùng Wi-Fi: Đảm bảo điện thoại và máy tính chung mạng Wi-Fi và build APK với IP của máy tính: `--dart-define=STAYNEST_API_URL=http://<IP_MÁY_TÍNH>:3000`.
 
-### 3. Lỗi `PostgreSQL is not configured` (HTTP 503)
-- **Nguyên nhân:** Biến `DATABASE_URL` trong `backend/.env` đang để trống hoặc file `.env` chưa được đọc.
-- **Cách xử lý:** Mở `backend/.env` kiểm tra lại dòng `DATABASE_URL=postgresql://...`. Mã nguồn `backend/src/config.js` đã được cập nhật để tự động đọc file này.
-
-### 4. Lỗi `getaddrinfo ENOTFOUND db.xxxx.supabase.co`
-- **Nguyên nhân:** Máy tính bị mất kết nối Internet hoặc domain của Supabase không phân giải được DNS.
-- **Cách xử lý:** Kiểm tra kết nối mạng hoặc ping thử domain Supabase của bạn.
+### 3. Lỗi `SELF_SIGNED_CERT_IN_CHAIN` khi kết nối Supabase
+- **Nguyên nhân:** Thiếu chứng chỉ SSL CA của Supabase.
+- **Cách xử lý:** Tải file chứng chỉ từ Supabase Dashboard về lưu tại `backend/supabase-ca.crt` và kiểm tra cấu hình `DATABASE_SSL=1` trong `backend/.env`.
 
 ---
 
 Chúc bạn có buổi demo dự án **StayNest** thành công rực rỡ! Nếu cần hỗ trợ thêm bất kỳ luồng chức năng nào, hãy liên hệ đội ngũ phát triển.
-

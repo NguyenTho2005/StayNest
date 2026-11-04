@@ -15,54 +15,28 @@ class PropertyDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
-  bool saved = false;
-  bool saving = false;
   late final Future<Map<String, dynamic>> property;
 
   @override
   void initState() {
     super.initState();
     property = ref.read(stayNestApiProvider).property(widget.slug);
-    _loadFavorite();
-  }
-
-  Future<void> _loadFavorite() async {
-    final api = ref.read(stayNestApiProvider);
-    if (await api.token == null) return;
-    try {
-      final favorites = await api.favorites();
-      if (mounted) {
-        setState(
-          () => saved = favorites.any((item) => item['slug'] == widget.slug),
-        );
-      }
-    } catch (_) {
-      // The detail page remains usable when favorites cannot load.
-    }
   }
 
   Future<void> _toggleFavorite() async {
-    if (saving) return;
-    final api = ref.read(stayNestApiProvider);
-    if (await api.token == null) {
-      if (!mounted) return;
-      context.push('/login');
-      return;
-    }
-    setState(() => saving = true);
     try {
-      await api.setFavorite(widget.slug, !saved);
-      if (mounted) {
-        setState(() => saved = !saved);
-        ref.invalidate(myFavoritesProvider);
-      }
+      await ref
+          .read(favoriteControllerProvider.notifier)
+          .toggle(widget.slug);
     } catch (error) {
       if (mounted) {
+        if (error is StayNestApiException && error.status == 401) {
+          context.push('/login');
+          return;
+        }
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$error')));
       }
-    } finally {
-      if (mounted) setState(() => saving = false);
     }
   }
 
@@ -386,7 +360,9 @@ class _PropertyDetailScreenState extends ConsumerState<PropertyDetailScreen> {
                           Positioned(
                             right: 16,
                             top: 12,
-                            child: saved
+                            child: ref
+                                    .watch(favoriteControllerProvider)
+                                    .isFavorite(widget.slug)
                                 ? InkWell(
                                     onTap: _toggleFavorite,
                                     child: const CircleAvatar(

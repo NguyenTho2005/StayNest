@@ -19,28 +19,41 @@ class SearchResultsListScreen extends ConsumerStatefulWidget {
 class _SearchResultsListScreenState
     extends ConsumerState<SearchResultsListScreen> {
   late Future<List<dynamic>> results;
-  int? minPrice;
-  int? maxPrice;
-  String? propertyType;
   String? sort;
-  int get activeFilters =>
-      (minPrice != null || maxPrice != null ? 1 : 0) +
-      (propertyType != null ? 1 : 0);
 
   Future<List<dynamic>> loadResults() {
     final draft = ref.read(bookingDraftProvider);
+    final filter = ref.read(searchFilterProvider);
     return ref
         .read(stayNestApiProvider)
         .properties(
           destination: draft.destinationSlug,
-          minPrice: minPrice,
-          maxPrice: maxPrice,
-          propertyType: propertyType,
+          minPrice: filter.minPrice,
+          maxPrice: filter.maxPrice,
+          propertyType: filter.normalizedPropertyType,
           sort: sort,
           checkIn: draft.checkInIso,
           checkOut: draft.checkOutIso,
           adults: draft.adults,
-        );
+        )
+        .then((items) {
+          if (filter.isCustomAmenities && filter.amenities.isNotEmpty) {
+            return items.where((p) {
+              final rawAmenities = p['amenities'];
+              final list = (rawAmenities is List ? rawAmenities : [])
+                  .map((e) => e.toString().toLowerCase())
+                  .toSet();
+              return filter.amenities.every(
+                (a) => list.any(
+                  (item) =>
+                      item.contains(a.toLowerCase()) ||
+                      a.toLowerCase().contains(item),
+                ),
+              );
+            }).toList();
+          }
+          return items;
+        });
   }
 
   @override
@@ -56,21 +69,8 @@ class _SearchResultsListScreenState
   Future<void> openControl(String path) async {
     final selected = await context.push<dynamic>(path);
     if (!mounted || selected == null) return;
-    if (path == '/search/filters/price-property' && selected is Map) {
-      final range = selected['price'] as RangeValues?;
-      final type = selected['propertyType'] as String?;
+    if (path == '/search/filters/price-property') {
       setState(() {
-        minPrice = range == null || range.start == 0
-            ? null
-            : range.start.round();
-        maxPrice = range == null || range.end == 3000000
-            ? null
-            : range.end.round();
-        propertyType = switch (type) {
-          'Khách sạn' => 'HOTEL',
-          'Homestay' => 'HOMESTAY',
-          _ => null,
-        };
         results = loadResults();
       });
     } else if (path == '/search/sort' && selected is String) {
@@ -157,54 +157,71 @@ class _SearchResultsListScreenState
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-              child: Row(
-                children: [
-                  _control(
-                    context,
-                    icon: 'search_list_03.svg',
-                    label: 'Lọc',
-                    count: activeFilters == 0 ? null : '$activeFilters',
-                    path: '/search/filters/price-property',
+            Builder(
+              builder: (context) {
+                final filter = ref.watch(searchFilterProvider);
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                  child: Row(
+                    children: [
+                      _control(
+                        context,
+                        icon: 'search_list_03.svg',
+                        label: 'Lọc',
+                        count: filter.count == 0 ? null : '${filter.count}',
+                        path: '/search/filters/price-property',
+                      ),
+                      const SizedBox(width: 8),
+                      _control(
+                        context,
+                        icon: 'search_list_04.svg',
+                        label: 'Sắp xếp',
+                        path: '/search/sort',
+                      ),
+                      const SizedBox(width: 8),
+                      _control(
+                        context,
+                        icon: 'search_list_05.svg',
+                        label: 'Bản đồ',
+                        path: '/search/map',
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  _control(
-                    context,
-                    icon: 'search_list_04.svg',
-                    label: 'Sắp xếp',
-                    path: '/search/sort',
-                  ),
-                  const SizedBox(width: 8),
-                  _control(
-                    context,
-                    icon: 'search_list_05.svg',
-                    label: 'Bản đồ',
-                    path: '/search/map',
-                  ),
-                ],
-              ),
+                );
+              },
             ),
-            if (minPrice != null || maxPrice != null || propertyType != null)
-              SizedBox(
-                height: 34,
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    if (minPrice != null || maxPrice != null)
-                      _AppliedChip(
-                        label: 'Giá đã lọc',
-                        icon: 'search_list_06.svg',
-                      ),
-                    if (propertyType != null)
-                      _AppliedChip(
-                        label: propertyType!,
-                        icon: 'search_list_08.svg',
-                      ),
-                  ],
-                ),
-              ),
+            Builder(
+              builder: (context) {
+                final filter = ref.watch(searchFilterProvider);
+                if (filter.count == 0) return const SizedBox.shrink();
+                return SizedBox(
+                  height: 34,
+                  child: ListView(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      if (filter.isCustomPrice)
+                        const _AppliedChip(
+                          label: 'Giá đã lọc',
+                          icon: 'search_list_06.svg',
+                        ),
+                      if (filter.isCustomPropertyType &&
+                          filter.propertyType != 'Tất cả')
+                        _AppliedChip(
+                          label: filter.propertyType,
+                          icon: 'search_list_08.svg',
+                        ),
+                      if (filter.isCustomAmenities &&
+                          filter.amenities.isNotEmpty)
+                        _AppliedChip(
+                          label: 'Tiện nghi (${filter.amenities.length})',
+                          icon: 'search_list_07.svg',
+                        ),
+                    ],
+                  ),
+                );
+              },
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: Row(
@@ -220,12 +237,19 @@ class _SearchResultsListScreenState
                       ),
                     ),
                   ),
-                  Text(
-                    activeFilters == 0 ? 'Tất cả chỗ ở' : 'Đã áp dụng bộ lọc',
-                    style: const TextStyle(
-                      color: Color(0xFF667085),
-                      fontSize: 12,
-                    ),
+                  Builder(
+                    builder: (context) {
+                      final filter = ref.watch(searchFilterProvider);
+                      return Text(
+                        filter.count == 0
+                            ? 'Tất cả chỗ ở'
+                            : 'Đã áp dụng ${filter.count} bộ lọc',
+                        style: const TextStyle(
+                          color: Color(0xFF667085),
+                          fontSize: 12,
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -361,14 +385,14 @@ class _SearchResultsListScreenState
                                 color: Color(0xFF667085),
                               ),
                             ),
-                            if (activeFilters > 0) ...[
+                            if (ref.read(searchFilterProvider).count > 0) ...[
                               const SizedBox(height: 16),
                               FilledButton.icon(
                                 onPressed: () {
+                                  ref
+                                      .read(searchFilterProvider.notifier)
+                                      .reset();
                                   setState(() {
-                                    minPrice = null;
-                                    maxPrice = null;
-                                    propertyType = null;
                                     results = loadResults();
                                   });
                                 },
@@ -593,40 +617,52 @@ class _PropertyResultCard extends ConsumerWidget {
                 Positioned(
                   right: 12,
                   top: 12,
-                  child: InkWell(
-                    onTap: () async {
-                      try {
-                        await ref
-                            .read(stayNestApiProvider)
-                            .setFavorite(slug, true);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Đã lưu vào yêu thích.'),
-                            ),
-                          );
-                        }
-                      } catch (error) {
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context)
-                              .showSnackBar(SnackBar(content: Text('$error')));
-                        }
-                      }
+                  child: Consumer(
+                    builder: (context, ref, _) {
+                      final isFav = ref
+                          .watch(favoriteControllerProvider)
+                          .isFavorite(slug);
+                      return InkWell(
+                        onTap: () async {
+                          try {
+                            await ref
+                                .read(favoriteControllerProvider.notifier)
+                                .toggle(slug);
+                          } catch (error) {
+                            if (context.mounted) {
+                              if (error is StayNestApiException &&
+                                  error.status == 401) {
+                                context.push('/login');
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('$error')),
+                              );
+                            }
+                          }
+                        },
+                        child: Container(
+                          width: 40,
+                          height: 40,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: const Color(0xCCFFFFFF),
+                            borderRadius: BorderRadius.circular(99),
+                          ),
+                          child: isFav
+                              ? const Icon(
+                                  Icons.favorite,
+                                  color: StayNestColors.teal,
+                                  size: 20,
+                                )
+                              : const FigmaSvg(
+                                  'assets/icons/search_list_10.svg',
+                                  width: 17,
+                                  height: 16,
+                                ),
+                        ),
+                      );
                     },
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: const Color(0xCCFFFFFF),
-                        borderRadius: BorderRadius.circular(99),
-                      ),
-                      child: const FigmaSvg(
-                        'assets/icons/search_list_10.svg',
-                        width: 17,
-                        height: 16,
-                      ),
-                    ),
                   ),
                 ),
                 if (badge != null)

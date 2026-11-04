@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../data/staynest_api.dart';
-
+import '../utils/date_formatters.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class BookingPriceScreen extends ConsumerStatefulWidget {
   const BookingPriceScreen({super.key});
@@ -90,6 +91,18 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
     final draft = ref.read(bookingDraftProvider);
     final api = ref.read(stayNestApiProvider);
 
+    final availableUnits = toInt(quote?['availableUnits']);
+    if (availableUnits < draft.roomCount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không còn đủ ${draft.roomCount} phòng cho ngày đã chọn.',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (draft.guestName.isEmpty ||
         draft.guestEmail.isEmpty ||
         draft.guestPhone.isEmpty) {
@@ -135,8 +148,22 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
       if (mounted) context.push('/booking/payment-method');
     } catch (caught) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text('$caught')));
+        if (caught is StayNestApiException &&
+            (caught.status == 409 ||
+                caught.code == 'NO_AVAILABILITY' ||
+                caught.code == 'CONFLICT')) {
+          loadQuote();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Phòng đã có khách khác đặt trước. Vui lòng chọn ngày hoặc phòng khác.',
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('$caught')));
+        }
       }
     } finally {
       if (mounted) setState(() => busy = false);
@@ -144,13 +171,18 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: Colors.white,
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 390),
-        child: Column(
-          children: [
+  Widget build(BuildContext context) {
+    final draft = ref.watch(bookingDraftProvider);
+    final isQuoteLoading = quote == null && error == null;
+    final isAvailable =
+        quote != null && toInt(quote!['availableUnits']) >= draft.roomCount;
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 390),
+          child: Column(
+            children: [
             Container(
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -173,15 +205,7 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
                       ),
                     ),
                   ),
-                  const CircleAvatar(
-                    radius: 15,
-                    backgroundColor: teal,
-                    child: Icon(
-                      Icons.person_outline,
-                      color: Colors.white,
-                      size: 16,
-                    ),
-                  ),
+                  const UserAvatarAppBar(size: 30),
                 ],
               ),
             ),
@@ -265,7 +289,7 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
                                 ),
                                 const SizedBox(height: 5),
                                 Text(
-                                  '▣ ${ref.read(bookingDraftProvider).checkInIso} – ${ref.read(bookingDraftProvider).checkOutIso} · ${quote?['nights'] ?? '—'} đêm · ${ref.read(bookingDraftProvider).adults} khách',
+                                  '▣ ${formatStayDateRange(draft.checkIn, draft.checkOut)} · ${quote?['nights'] ?? draft.nights} đêm · ${draft.adults} khách',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: muted,
@@ -277,209 +301,314 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    _card(
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          const Row(
-                            children: [
-                              Icon(
-                                Icons.receipt_long_outlined,
-                                color: teal,
-                                size: 18,
-                              ),
-                              SizedBox(width: 7),
-                              Text(
-                                'Chi tiết giá',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: ink,
-                                ),
-                              ),
-                              Spacer(),
-                              Text(
-                                '✿ Minh bạch 100%',
-                                style: TextStyle(fontSize: 10, color: teal),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          _price(
-                            '${vnd(quote?['nightlyPriceVnd'])} × ${quote?['nights'] ?? '—'} đêm',
-                            vnd(quote?['roomSubtotalVnd']),
-                          ),
-                          _price('Thuế (VAT 10%)  ⓘ', vnd(quote?['taxVnd'])),
-                          _price(
-                            'Phí dịch vụ StayNest  ⓘ',
-                            vnd(quote?['serviceFeeVnd']),
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFEAF7F6),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Row(
+                    if (isQuoteLoading) ...[
+                      const SizedBox(height: 20),
+                      _card(
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 40),
+                          child: Center(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
+                                CircularProgressIndicator(color: teal),
+                                SizedBox(height: 16),
                                 Text(
-                                  '♧ Mã giảm giá ${ref.read(bookingDraftProvider).promotionCode ?? 'Không có'}',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Color(0xFF00A86B),
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  '−${vnd(quote?['discountVnd'])}',
+                                  'Đang tính toán bảng giá và kiểm tra phòng…',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: Color(0xFF00A86B),
+                                    color: muted,
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                          const Divider(height: 20, color: Color(0xFFEAF0FE)),
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                        ),
+                      ),
+                    ] else if (error != null) ...[
+                      const SizedBox(height: 20),
+                      _card(
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 24,
+                            horizontal: 10,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                              const Icon(
+                                Icons.error_outline,
+                                color: Color(0xFFD92D20),
+                                size: 32,
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                error!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFFD92D20),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              ElevatedButton(
+                                onPressed: loadQuote,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: teal,
+                                ),
+                                child: const Text(
+                                  'Thử lại',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ] else ...[
+                      if (!isAvailable) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF3F2),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: const Color(0xFFFDA29B),
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.warning_amber_rounded,
+                                color: Color(0xFFD92D20),
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Không đủ ${draft.roomCount} phòng cho ngày đã chọn.',
+                                  style: const TextStyle(
+                                    color: Color(0xFFB42318),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      _card(
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.receipt_long_outlined,
+                                  color: teal,
+                                  size: 18,
+                                ),
+                                SizedBox(width: 7),
+                                Expanded(
+                                  child: Text(
+                                    'Chi tiết giá',
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                      color: ink,
+                                    ),
+                                  ),
+                                ),
+                                Text(
+                                  '✿ Minh bạch 100%',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: teal,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            _price(
+                              '${vnd(quote!['nightlyPriceVnd'])} × ${quote!['nights']} đêm',
+                              vnd(quote!['roomSubtotalVnd']),
+                            ),
+                            _price(
+                              'Thuế (VAT 10%)  ⓘ',
+                              vnd(quote!['taxVnd']),
+                            ),
+                            _price(
+                              'Phí dịch vụ StayNest  ⓘ',
+                              vnd(quote!['serviceFeeVnd']),
+                            ),
+                            if (toInt(quote!['discountVnd']) > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFEAF7F6),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Row(
                                   children: [
                                     Text(
-                                      'Tổng thanh toán',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                        color: ink,
+                                      '♧ Mã giảm giá ${draft.promotionCode ?? ''}',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        color: Color(0xFF00A86B),
                                       ),
                                     ),
-                                    SizedBox(height: 5),
+                                    const Spacer(),
                                     Text(
-                                      'Đã bao gồm toàn bộ thuế & phí',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: muted,
+                                      '−${vnd(quote!['discountVnd'])}',
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: Color(0xFF00A86B),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                              Text(
-                                vnd(quote?['totalVnd']),
-                                style: const TextStyle(
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.w700,
-                                  color: teal,
+                            const Divider(
+                              height: 20,
+                              color: Color(0xFFEAF0FE),
+                            ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                const Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Tổng thanh toán',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                          color: ink,
+                                        ),
+                                      ),
+                                      SizedBox(height: 5),
+                                      Text(
+                                        'Đã bao gồm toàn bộ thuế & phí',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: muted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (error != null)
-                      Text(error!, style: const TextStyle(color: Colors.red)),
-                    if (quote == null && error == null)
-                      const Center(child: CircularProgressIndicator()),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: () async {
-                        await context.push('/booking/coupons');
-                        if (mounted) loadQuote();
-                      },
-                      child: _card(
-                        Row(
-                          children: [
-                            const CircleAvatar(
-                              radius: 19,
-                              backgroundColor: Color(0xFFEAF7F6),
-                              child: Icon(Icons.percent, color: teal, size: 20),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    ref
-                                                .read(bookingDraftProvider)
-                                                .promotionCode ==
-                                            null
-                                        ? 'Mã ưu đãi'
-                                        : 'Mã ưu đãi   Đã áp dụng',
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: muted,
-                                    ),
+                                Text(
+                                  vnd(quote!['totalVnd']),
+                                  style: const TextStyle(
+                                    fontSize: 23,
+                                    fontWeight: FontWeight.w700,
+                                    color: teal,
                                   ),
-                                  Text(
-                                    ref
-                                                .read(bookingDraftProvider)
-                                                .promotionCode ==
-                                            null
-                                        ? 'Chưa áp dụng'
-                                        : 'STAY100 (−${vnd(quote?['discountVnd'])})',
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: ink,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const Text(
-                              'Đổi mã ›',
-                              style: TextStyle(fontSize: 11, color: teal),
+                                ),
+                              ],
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(13),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF0F4F4),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: const Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.shield_outlined,
-                            color: Color(0xFF12B76A),
-                            size: 20,
+                      const SizedBox(height: 12),
+                      InkWell(
+                        onTap: () async {
+                          await context.push('/booking/coupons');
+                          if (mounted) loadQuote();
+                        },
+                        child: _card(
+                          Row(
+                            children: [
+                              const CircleAvatar(
+                                radius: 19,
+                                backgroundColor: Color(0xFFEAF7F6),
+                                child: Icon(
+                                  Icons.percent,
+                                  color: teal,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      draft.promotionCode == null
+                                          ? 'Mã ưu đãi'
+                                          : 'Mã ưu đãi   Đã áp dụng',
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: muted,
+                                      ),
+                                    ),
+                                    Text(
+                                      draft.promotionCode == null
+                                          ? 'Chưa áp dụng'
+                                          : '${draft.promotionCode} (−${vnd(quote!['discountVnd'])})',
+                                      style: const TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: ink,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Text(
+                                'Đổi mã ›',
+                                style: TextStyle(fontSize: 11, color: teal),
+                              ),
+                            ],
                           ),
-                          SizedBox(width: 9),
-                          Expanded(
-                            child: Text(
-                              'Cam kết giá minh bạch từ StayNest: Mọi chi phí được thông báo đầy đủ. Quý khách tuyệt đối không phải chịu phụ phí ẩn phát sinh tại nơi lưu trú.',
-                              style: TextStyle(
-                                fontSize: 11,
-                                height: 1.6,
-                                color: muted,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(13),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF0F4F4),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(
+                              Icons.shield_outlined,
+                              color: Color(0xFF12B76A),
+                              size: 20,
+                            ),
+                            SizedBox(width: 9),
+                            Expanded(
+                              child: Text(
+                                'Cam kết giá minh bạch từ StayNest: Mọi chi phí được thông báo đầy đủ. Quý khách tuyệt đối không phải chịu phụ phí ẩn phát sinh tại nơi lưu trú.',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  height: 1.6,
+                                  color: muted,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    _card(
-                      Text(
-                        '▣  Hủy phòng miễn phí trước 14:00, ${ref.read(bookingDraftProvider).checkIn.subtract(const Duration(days: 2)).day}/${ref.read(bookingDraftProvider).checkIn.subtract(const Duration(days: 2)).month}/${ref.read(bookingDraftProvider).checkIn.year}',
-                        style: const TextStyle(fontSize: 11, color: ink),
+                      const SizedBox(height: 12),
+                      _card(
+                        Text(
+                          '▣  Hủy phòng miễn phí trước 14:00, ${formatStayDate(draft.checkIn.subtract(const Duration(days: 2)))}',
+                          style: const TextStyle(fontSize: 11, color: ink),
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
@@ -492,22 +621,28 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
                 height: 52,
                 child: ElevatedButton(
                   onPressed:
-                      quote == null ||
-                          busy ||
-                          (num.tryParse('${quote?['availableUnits']}') ?? 0) < 1
-                      ? null
-                      : createBooking,
+                      (!isAvailable || isQuoteLoading || error != null || busy)
+                          ? null
+                          : createBooking,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: teal,
-                    disabledBackgroundColor: const Color(0xFF9AA9A9),
+                    disabledBackgroundColor: const Color(0xFFCFD8DC),
                     disabledForegroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                   child: Text(
-                    busy ? 'Đang giữ phòng…' : 'Chọn thanh toán',
-                    style: TextStyle(fontSize: 15),
+                    busy
+                        ? 'Đang giữ phòng…'
+                        : isQuoteLoading
+                            ? 'Đang tính giá…'
+                            : error != null
+                                ? 'Không thể tải giá'
+                                : !isAvailable
+                                    ? 'Không còn đủ phòng'
+                                    : 'Chọn thanh toán',
+                    style: const TextStyle(fontSize: 15),
                   ),
                 ),
               ),
@@ -517,6 +652,7 @@ class _BookingPriceScreenState extends ConsumerState<BookingPriceScreen> {
       ),
     ),
   );
+}
 
   Widget _card(Widget child) => Container(
     padding: const EdgeInsets.all(13),

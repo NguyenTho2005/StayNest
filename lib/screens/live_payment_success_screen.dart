@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../data/staynest_api.dart';
+import '../utils/date_formatters.dart';
 import '../widgets/figma_asset.dart';
 
 class LivePaymentSuccessScreen extends ConsumerWidget {
@@ -95,7 +96,7 @@ class LivePaymentSuccessScreen extends ConsumerWidget {
                               const SizedBox(height: 8),
                               Text('Loại phòng: ${booking['room_name']}'),
                               Text(
-                                'Thời gian: ${booking['check_in_date']} – ${booking['check_out_date']}',
+                                'Thời gian: ${formatStayDateRange(booking['check_in_date'], booking['check_out_date'])}',
                               ),
                               Text('Khách: ${booking['guest_name']}'),
                               const SizedBox(height: 10),

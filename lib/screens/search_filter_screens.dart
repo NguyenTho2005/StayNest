@@ -1,21 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/search_filter_state.dart';
 import '../design/tokens.dart';
 import '../widgets/figma_asset.dart';
 import '../widgets/figma_status_bar.dart';
 
-class PricePropertyFilterScreen extends StatefulWidget {
+class PricePropertyFilterScreen extends ConsumerStatefulWidget {
   const PricePropertyFilterScreen({super.key});
 
   @override
-  State<PricePropertyFilterScreen> createState() =>
+  ConsumerState<PricePropertyFilterScreen> createState() =>
       _PricePropertyFilterScreenState();
 }
 
-class _PricePropertyFilterScreenState extends State<PricePropertyFilterScreen> {
-  RangeValues price = const RangeValues(500000, 1500000);
-  String propertyType = 'Tất cả';
+class _PricePropertyFilterScreenState
+    extends ConsumerState<PricePropertyFilterScreen> {
+  late RangeValues price;
+  late String propertyType;
+
+  @override
+  void initState() {
+    super.initState();
+    final filter = ref.read(searchFilterProvider);
+    price = filter.isCustomPrice
+        ? filter.priceRange
+        : const RangeValues(500000, 1500000);
+    propertyType = filter.isCustomPropertyType ? filter.propertyType : 'Tất cả';
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -212,23 +225,39 @@ class _PricePropertyFilterScreenState extends State<PricePropertyFilterScreen> {
             price = const RangeValues(0, 3000000);
             propertyType = 'Tất cả';
           }),
-          onApply: () =>
-              context.pop({'price': price, 'propertyType': propertyType}),
+          onApply: () async {
+            final current = ref.read(searchFilterProvider);
+            final draft = current.copyWith(
+              priceRange: price,
+              propertyType: propertyType,
+              isCustomPrice: price.start > 0 || price.end < 3000000,
+              isCustomPropertyType: propertyType != 'Tất cả',
+            );
+            final result = await context.push<SearchFilterState>(
+              '/search/filters/amenities',
+              extra: draft,
+            );
+            if (result != null && context.mounted) {
+              context.pop(result);
+            }
+          },
         ),
       ],
     ),
   );
 }
 
-class AmenityFilterScreen extends StatefulWidget {
-  const AmenityFilterScreen({super.key});
+class AmenityFilterScreen extends ConsumerStatefulWidget {
+  const AmenityFilterScreen({super.key, this.initialDraft});
+  final SearchFilterState? initialDraft;
 
   @override
-  State<AmenityFilterScreen> createState() => _AmenityFilterScreenState();
+  ConsumerState<AmenityFilterScreen> createState() =>
+      _AmenityFilterScreenState();
 }
 
-class _AmenityFilterScreenState extends State<AmenityFilterScreen> {
-  final selected = <String>{'Wi-Fi miễn phí', 'Điều hòa', 'Bếp nấu ăn'};
+class _AmenityFilterScreenState extends ConsumerState<AmenityFilterScreen> {
+  late final Set<String> selected;
   static const items = [
     ('Wi-Fi miễn phí', 'filter_amenity_01.svg'),
     ('Điều hòa', 'filter_amenity_03.svg'),
@@ -239,6 +268,18 @@ class _AmenityFilterScreenState extends State<AmenityFilterScreen> {
     ('Ban công', 'filter_amenity_08.svg'),
     ('Cho phép thú cưng', 'filter_amenity_09.svg'),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    final SearchFilterState draft =
+        widget.initialDraft ?? ref.read(searchFilterProvider);
+    selected = Set<String>.from(
+      draft.isCustomAmenities
+          ? draft.amenities
+          : {'Wi-Fi miễn phí', 'Điều hòa', 'Bếp nấu ăn'},
+    );
+  }
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -384,7 +425,16 @@ class _AmenityFilterScreenState extends State<AmenityFilterScreen> {
           resetLabel: 'Đặt lại',
           actionLabel: 'Xem kết quả',
           onReset: () => setState(selected.clear),
-          onApply: () => context.pop(selected.toList()),
+          onApply: () {
+            final SearchFilterState draft =
+                widget.initialDraft ?? ref.read(searchFilterProvider);
+            final finalFilter = draft.copyWith(
+              amenities: Set<String>.from(selected),
+              isCustomAmenities: selected.isNotEmpty,
+            );
+            ref.read(searchFilterProvider.notifier).setFilter(finalFilter);
+            context.pop(finalFilter);
+          },
         ),
       ],
     ),

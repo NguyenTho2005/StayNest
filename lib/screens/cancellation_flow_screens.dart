@@ -158,12 +158,14 @@ class CancellationStartScreen extends StatelessWidget {
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'MÃ ĐẶT PHÒNG  SN-1024',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _ink,
+                              Expanded(
+                                child: Text(
+                                  'MÃ ĐẶT PHÒNG  SN-1024',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: _ink,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -402,10 +404,13 @@ class RefundEstimateScreen extends StatelessWidget {
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(
-                                  '▣ 14/11/2026 – 16/11/2026',
-                                  style: TextStyle(fontSize: 11, color: _muted),
+                                Expanded(
+                                  child: Text(
+                                    '▣ 14/11/2026 – 16/11/2026',
+                                    style: TextStyle(fontSize: 11, color: _muted),
+                                  ),
                                 ),
+                                SizedBox(width: 8),
                                 Text(
                                   'Đã thanh toán\n1.800.000đ',
                                   textAlign: TextAlign.right,
@@ -427,12 +432,14 @@ class RefundEstimateScreen extends StatelessWidget {
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Điều kiện hoàn tiền',
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: _ink,
+                              Expanded(
+                                child: Text(
+                                  'Điều kiện hoàn tiền',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: _ink,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -558,10 +565,13 @@ class RefundEstimateScreen extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 14, color: selected ? _teal : _ink),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(fontSize: 14, color: selected ? _teal : _ink),
+              ),
             ),
+            const SizedBox(width: 8),
             Text(
               amount,
               style: TextStyle(
@@ -742,7 +752,10 @@ class _CancellationReasonScreenState extends State<CancellationReasonScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    _button('Xác nhận hủy →', null),
+                    _button(
+                      'Xác nhận hủy →',
+                      () => context.push('/trips/booking/cancel/success-demo'),
+                    ),
                   ],
                 ),
               ),
@@ -844,12 +857,14 @@ class CancellationSuccessScreen extends StatelessWidget {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Khoản hoàn tiền dự kiến',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _ink,
+                        Expanded(
+                          child: Text(
+                            'Khoản hoàn tiền dự kiến',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _ink,
+                            ),
                           ),
                         ),
                         Text(
@@ -915,12 +930,14 @@ class CancellationSuccessScreen extends StatelessWidget {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Chi tiết đặt phòng đã hủy',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _ink,
+                        Expanded(
+                          child: Text(
+                            'Chi tiết đặt phòng đã hủy',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _ink,
+                            ),
                           ),
                         ),
                         Text(

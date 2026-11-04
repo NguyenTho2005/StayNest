@@ -6,6 +6,7 @@ import '../data/staynest_api.dart';
 import '../design/tokens.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class FavoritesScreen extends ConsumerStatefulWidget {
   const FavoritesScreen({super.key});
@@ -52,24 +53,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                           ),
                         ),
                       ),
-                      InkWell(
+                      UserAvatarAppBar(
+                        size: 32,
                         onTap: () => context.go('/account'),
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          width: 32,
-                          height: 32,
-                          decoration: const BoxDecoration(
-                            color: StayNestColors.teal,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: FigmaSvg(
-                              'assets/icons/favorites_03.svg',
-                              width: 15,
-                              height: 12,
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -255,7 +241,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                         Center(
                           child: TextButton(
                             onPressed: () =>
-                                ref.invalidate(myFavoritesProvider),
+                                ref.read(favoriteControllerProvider.notifier).load(),
                             child: const Text(
                               'Không tải được yêu thích. Thử lại',
                             ),
@@ -278,9 +264,8 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> {
                             slug: '${item['slug']}',
                             onRemove: () async {
                               await ref
-                                  .read(stayNestApiProvider)
-                                  .setFavorite('${item['slug']}', false);
-                              ref.invalidate(myFavoritesProvider);
+                                  .read(favoriteControllerProvider.notifier)
+                                  .remove('${item['slug']}');
                             },
                             image: 'assets/images/${item['image_path']}',
                             destination: '${item['address']}'.split(',').first,

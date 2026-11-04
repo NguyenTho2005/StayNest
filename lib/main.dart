@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'data/search_filter_state.dart';
 import 'design/tokens.dart';
 import 'widgets/responsive_app_shell.dart';
 import 'screens/account_screen.dart';
@@ -76,10 +77,11 @@ import 'screens/cancellation_flow_screens.dart';
 import 'screens/trip_followup_screens.dart';
 import 'screens/final_page_screens.dart';
 import 'screens/location_permission_screen.dart';
+import 'screens/debug_figma_gallery_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
-    initialLocation: '/',
+    initialLocation: '/splash',
     routes: [
       GoRoute(
         path: '/',
@@ -103,7 +105,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/search/filters/amenities',
-        builder: (context, state) => const AmenityFilterScreen(),
+        builder: (context, state) => AmenityFilterScreen(
+          initialDraft: state.extra as SearchFilterState?,
+        ),
       ),
       GoRoute(
         path: '/search/sort',
@@ -503,6 +507,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/password/success',
         builder: (context, state) => const PasswordResetSuccessScreen(),
+      ),
+      GoRoute(
+        path: '/debug/figma-screens',
+        builder: (context, state) => const DebugFigmaGalleryScreen(),
       ),
     ],
   );

@@ -6,6 +6,7 @@ import '../data/staynest_api.dart';
 import '../design/tokens.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class AccountScreen extends ConsumerWidget {
   const AccountScreen({super.key});
@@ -89,45 +90,29 @@ class AccountScreen extends ConsumerWidget {
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: 60,
-                                height: 60,
-                                decoration: const BoxDecoration(
-                                  color: StayNestColors.paleTeal,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Stack(
-                                  alignment: Alignment.center,
-                                  children: [
-                                    const Text(
-                                      'ND',
-                                      style: TextStyle(
-                                        fontSize: 22,
-                                        height: 28 / 22,
-                                        fontWeight: FontWeight.w600,
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  const UserAvatarAppBar(size: 60),
+                                  Positioned(
+                                    right: -1,
+                                    bottom: -1,
+                                    child: Container(
+                                      width: 16,
+                                      height: 16,
+                                      decoration: const BoxDecoration(
                                         color: StayNestColors.teal,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: const FigmaSvg(
+                                        'assets/icons/account_01.svg',
+                                        width: 10,
+                                        height: 9.5,
                                       ),
                                     ),
-                                    Positioned(
-                                      right: -1,
-                                      bottom: -1,
-                                      child: Container(
-                                        width: 16,
-                                        height: 16,
-                                        decoration: const BoxDecoration(
-                                          color: StayNestColors.teal,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        alignment: Alignment.center,
-                                        child: const FigmaSvg(
-                                          'assets/icons/account_01.svg',
-                                          width: 10,
-                                          height: 9.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                                  ),
+                                ],
                               ),
                               const SizedBox(width: 12),
                               Expanded(

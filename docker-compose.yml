@@ -1,0 +1,68 @@
+services:
+  # ==============================================================================
+  # 1. StayNest Backend API (Node.js + Express)
+  # ==============================================================================
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: staynest-backend
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - PORT=3000
+      - HOST=0.0.0.0
+      - STAYNEST_EMBEDDED_DEMO=${STAYNEST_EMBEDDED_DEMO:-0}
+      - DATABASE_SSL_CA_FILE=/app/supabase-ca.crt
+    env_file:
+      - path: backend/.env
+        required: false
+    volumes:
+      - ./assets/images:/assets/images:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # ==============================================================================
+  # 2. StayNest Frontend (Flutter Web + Nginx reverse proxy on port 8080)
+  # ==============================================================================
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.web-prebuilt
+    container_name: staynest-frontend
+    restart: unless-stopped
+    network_mode: host
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  # ==============================================================================
+  # 3. Optional Local PostgreSQL (Active when running: docker compose --profile local-db up -d)
+  # ==============================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: staynest-postgres
+    restart: unless-stopped
+    profiles:
+      - local-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=staynest
+    volumes:
+      - staynest-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  staynest-pgdata:

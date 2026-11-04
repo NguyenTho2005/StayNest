@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/staynest_api.dart';
 import '../design/tokens.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/figma_asset.dart';
 
-class DestinationHotelsScreen extends StatefulWidget {
+class DestinationHotelsScreen extends ConsumerStatefulWidget {
   const DestinationHotelsScreen({super.key});
   @override
-  State<DestinationHotelsScreen> createState() =>
+  ConsumerState<DestinationHotelsScreen> createState() =>
       _DestinationHotelsScreenState();
 }
 
-class _DestinationHotelsScreenState extends State<DestinationHotelsScreen> {
+class _DestinationHotelsScreenState
+    extends ConsumerState<DestinationHotelsScreen> {
   final Set<String> filters = {};
-  bool saved = false;
 
   @override
   Widget build(BuildContext context) => Scaffold(
@@ -253,7 +255,29 @@ class _DestinationHotelsScreenState extends State<DestinationHotelsScreen> {
                                   right: 8,
                                   top: 8,
                                   child: InkWell(
-                                    onTap: () => setState(() => saved = !saved),
+                                    onTap: () async {
+                                      try {
+                                        await ref
+                                            .read(
+                                              favoriteControllerProvider
+                                                  .notifier,
+                                            )
+                                            .toggle('ocean-pearl-hotel');
+                                      } catch (e) {
+                                        if (!context.mounted) return;
+                                        if (e is StayNestApiException &&
+                                            e.status == 401) {
+                                          context.push('/login');
+                                          return;
+                                        }
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                              SnackBar(
+                                                content: Text('$e'),
+                                              ),
+                                            );
+                                      }
+                                    },
                                     child: Container(
                                       width: 44,
                                       height: 44,
@@ -261,12 +285,24 @@ class _DestinationHotelsScreenState extends State<DestinationHotelsScreen> {
                                         color: Color(0xD9FFFFFF),
                                         shape: BoxShape.circle,
                                       ),
-                                      child: const Center(
-                                        child: FigmaSvg(
-                                          'assets/icons/destination_hotels_05.svg',
-                                          width: 18.333,
-                                          height: 16.821,
-                                        ),
+                                      child: Center(
+                                        child: ref
+                                                .watch(
+                                                  favoriteControllerProvider,
+                                                )
+                                                .isFavorite(
+                                                  'ocean-pearl-hotel',
+                                                )
+                                            ? const Icon(
+                                                Icons.favorite,
+                                                color: StayNestColors.teal,
+                                                size: 20,
+                                              )
+                                            : const FigmaSvg(
+                                                'assets/icons/destination_hotels_05.svg',
+                                                width: 18.333,
+                                                height: 16.821,
+                                              ),
                                       ),
                                     ),
                                   ),

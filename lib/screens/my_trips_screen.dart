@@ -5,8 +5,10 @@ import 'package:intl/intl.dart';
 
 import '../data/staynest_api.dart';
 import '../design/tokens.dart';
+import '../utils/date_formatters.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class MyTripsScreen extends ConsumerStatefulWidget {
   const MyTripsScreen({super.key});
@@ -88,23 +90,9 @@ class _MyTripsScreenState extends ConsumerState<MyTripsScreen> {
                         ),
                       ),
                       const SizedBox(width: 4),
-                      InkWell(
+                      UserAvatarAppBar(
+                        size: 36,
                         onTap: () => context.go('/account'),
-                        child: Container(
-                          width: 36,
-                          height: 36,
-                          decoration: const BoxDecoration(
-                            color: StayNestColors.teal,
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Center(
-                            child: FigmaSvg(
-                              'assets/icons/trips_04.svg',
-                              width: 12,
-                              height: 13.333,
-                            ),
-                          ),
-                        ),
                       ),
                     ],
                   ),
@@ -202,7 +190,10 @@ class _LiveTripCard extends StatelessWidget {
               Text('${booking['room_name']} · ${booking['booking_code']}'),
               const SizedBox(height: 6),
               Text(
-                '${booking['check_in_date']} – ${booking['check_out_date']}',
+                formatStayDateRange(
+                  booking['check_in_date'],
+                  booking['check_out_date'],
+                ),
               ),
               const SizedBox(height: 6),
               Text(status, style: const TextStyle(color: StayNestColors.teal)),
@@ -515,7 +506,7 @@ class UpcomingTripDemoContent extends StatelessWidget {
                   SizedBox(
                     height: 46,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () => context.push('/trips/booking'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: StayNestColors.teal,
                         foregroundColor: StayNestColors.white,
@@ -551,23 +542,27 @@ class UpcomingTripDemoContent extends StatelessWidget {
             Container(
               height: 48,
               color: const Color(0xFFF9FBFC),
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _TripAction(
                     icon: 'assets/icons/trips_12.svg',
                     label: 'Chỉ đường',
+                    onTap: () => context.push('/trips/booking/directions'),
                   ),
-                  _ActionDivider(),
+                  const _ActionDivider(),
                   _TripAction(
                     icon: 'assets/icons/trips_13.svg',
                     label: 'Xem voucher',
+                    onTap: () => context.push('/trips/booking/voucher'),
                   ),
-                  _ActionDivider(),
+                  const _ActionDivider(),
                   _TripAction(
                     icon: 'assets/icons/trips_14.svg',
                     label: 'Liên hệ host',
                     muted: true,
+                    onTap: () =>
+                        context.push('/properties/may-homestay/host-chat'),
                   ),
                 ],
               ),
@@ -669,26 +664,31 @@ class _TripAction extends StatelessWidget {
     required this.icon,
     required this.label,
     this.muted = false,
+    this.onTap,
   });
   final String icon;
   final String label;
   final bool muted;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      FigmaSvg(icon, width: 14, height: 14),
-      const SizedBox(width: 4),
-      Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          height: 14 / 10,
-          color: muted ? StayNestColors.muted : StayNestColors.teal,
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        FigmaSvg(icon, width: 14, height: 14),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            height: 14 / 10,
+            color: muted ? StayNestColors.muted : StayNestColors.teal,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -704,29 +704,119 @@ class _TripEmptyState extends StatelessWidget {
   final int tab;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    height: 300,
-    child: Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget build(BuildContext context) {
+    if (tab == 0) {
+      // SCR-099 Figma Upcoming Trips Empty State
+      return Column(
         children: [
-          const FigmaSvg('assets/icons/trips_15.svg', width: 36, height: 36),
-          const SizedBox(height: 12),
-          Text(
-            tab == 0
-                ? 'Chưa có chuyến đi sắp tới'
-                : tab == 1
-                ? 'Chưa có chuyến đi đã hoàn thành'
-                : 'Chưa có chuyến đi đã hủy',
-            style: const TextStyle(
-              fontSize: 14,
-              height: 20 / 14,
-              fontWeight: FontWeight.w600,
+          const SizedBox(height: 20),
+          const CircleAvatar(
+            radius: 54,
+            backgroundColor: Color(0xFFEAF7F6),
+            child: CircleAvatar(
+              radius: 36,
+              backgroundColor: Colors.white,
+              child: Icon(
+                Icons.luggage_outlined,
+                color: StayNestColors.teal,
+                size: 36,
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'Bạn chưa có chuyến đi nào',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
               color: StayNestColors.ink,
             ),
           ),
+          const SizedBox(height: 8),
+          const Text(
+            'Các chuyến đi sắp tới của bạn sẽ xuất hiện tại đây sau khi được đặt và xác nhận.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 13,
+              height: 1.5,
+              color: StayNestColors.muted,
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => context.go('/'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: StayNestColors.teal,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: const Text(
+                '◉ Khám phá chỗ ở',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF0F4F4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.support_agent, color: StayNestColors.teal),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text(
+                    'Cần hỗ trợ đặt phòng?\nĐội ngũ StayNest sẵn sàng đồng hành 24/7',
+                    style: TextStyle(fontSize: 11, color: StayNestColors.ink),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.arrow_forward, size: 16),
+                  onPressed: () => context.push('/trips/help'),
+                ),
+              ],
+            ),
+          ),
         ],
-      ),
-    ),
-  );
+      );
+    }
+
+    return Column(
+      children: [
+        const SizedBox(height: 40),
+        const FigmaSvg('assets/icons/trips_15.svg', width: 36, height: 36),
+        const SizedBox(height: 12),
+        Text(
+          tab == 1
+              ? 'Chưa có chuyến đi đã hoàn thành'
+              : 'Chưa có chuyến đi đã hủy',
+          style: const TextStyle(
+            fontSize: 14,
+            height: 20 / 14,
+            fontWeight: FontWeight.w600,
+            color: StayNestColors.ink,
+          ),
+        ),
+        const SizedBox(height: 16),
+        OutlinedButton(
+          onPressed: () => context.push(
+            tab == 1 ? '/trips/completed-demo' : '/trips/cancelled-demo',
+          ),
+          child: Text(
+            tab == 1
+                ? 'Xem chuyến đi mẫu hoàn thành →'
+                : 'Xem đơn đã hủy mẫu →',
+          ),
+        ),
+      ],
+    );
+  }
 }

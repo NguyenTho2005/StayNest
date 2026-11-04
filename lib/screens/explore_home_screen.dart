@@ -8,6 +8,7 @@ import '../design/tokens.dart';
 import '../widgets/bottom_navigation.dart';
 import '../widgets/figma_asset.dart';
 import '../widgets/figma_status_bar.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class ExploreHomeScreen extends ConsumerStatefulWidget {
   const ExploreHomeScreen({super.key});
@@ -17,41 +18,17 @@ class ExploreHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _ExploreHomeScreenState extends ConsumerState<ExploreHomeScreen> {
-  bool _isSaved = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkFavorite();
-  }
-
-  Future<void> _checkFavorite() async {
-    final api = ref.read(stayNestApiProvider);
-    if (await api.token == null) return;
-    try {
-      final favs = await api.favorites();
-      if (mounted) {
-        setState(() {
-          _isSaved = favs.any((item) => item['slug'] == 'may-homestay');
-        });
-      }
-    } catch (_) {}
-  }
-
   Future<void> _toggleFavorite() async {
-    final api = ref.read(stayNestApiProvider);
-    if (await api.token == null) {
-      if (mounted) context.push('/login');
-      return;
-    }
-    final next = !_isSaved;
-    setState(() => _isSaved = next);
     try {
-      await api.setFavorite('may-homestay', next);
-      ref.invalidate(myFavoritesProvider);
+      await ref
+          .read(favoriteControllerProvider.notifier)
+          .toggle('may-homestay');
     } catch (error) {
       if (mounted) {
-        setState(() => _isSaved = !next);
+        if (error is StayNestApiException && error.status == 401) {
+          context.push('/login');
+          return;
+        }
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text('$error')));
       }
@@ -85,7 +62,9 @@ class _ExploreHomeScreenState extends ConsumerState<ExploreHomeScreen> {
                     const _WeekendOffer(),
                     const _Destinations(),
                     _Recommendations(
-                      isSaved: _isSaved,
+                      isSaved: ref
+                          .watch(favoriteControllerProvider)
+                          .isFavorite('may-homestay'),
                       onToggleSaved: _toggleFavorite,
                     ),
                     const Padding(
@@ -160,33 +139,26 @@ class _BrandBar extends StatelessWidget {
               ],
             ),
           ),
-          InkWell(
-            onTap: () => context.go('/account'),
-            borderRadius: BorderRadius.circular(24),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                ClipOval(
-                  child: FigmaRaster(
-                    'assets/images/nguyen_an.jpg',
-                    width: 40,
-                    height: 40,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              UserAvatarAppBar(
+                size: 40,
+                onTap: () => context.go('/account'),
+              ),
+              Positioned(
+                right: -2,
+                bottom: -2,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: const BoxDecoration(
+                    color: StayNestColors.teal,
+                    shape: BoxShape.circle,
                   ),
                 ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: Container(
-                    width: 14,
-                    height: 14,
-                    decoration: const BoxDecoration(
-                      color: StayNestColors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),

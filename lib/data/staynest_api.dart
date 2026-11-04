@@ -4,6 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
+import 'favorite_controller.dart';
+export 'favorite_controller.dart';
+export 'onboarding_controller.dart';
+export 'search_filter_state.dart';
+
 const stayNestApiUrl = String.fromEnvironment(
   'STAYNEST_API_URL',
   defaultValue: 'http://127.0.0.1:3000',
@@ -37,10 +42,15 @@ final myBookingsProvider = FutureProvider<List<dynamic>>((ref) async {
   if (await api.token == null) return [];
   return api.bookings();
 });
-final myFavoritesProvider = FutureProvider<List<dynamic>>((ref) async {
-  final api = ref.watch(stayNestApiProvider);
-  if (await api.token == null) return [];
-  return api.favorites();
+final myFavoritesProvider = Provider<AsyncValue<List<dynamic>>>((ref) {
+  final favState = ref.watch(favoriteControllerProvider);
+  if (favState.isLoading && favState.items.isEmpty) {
+    return const AsyncValue.loading();
+  }
+  if (favState.error != null && favState.items.isEmpty) {
+    return AsyncValue.error(favState.error!, StackTrace.current);
+  }
+  return AsyncValue.data(favState.items);
 });
 final availableVouchersProvider = FutureProvider<List<dynamic>>(
   (ref) async => ref.watch(stayNestApiProvider).vouchers(),
@@ -204,14 +214,20 @@ class StayNestApi {
           ..body = body == null ? '' : jsonEncode(body),
       );
       result = await http.Response.fromStream(response);
-    } on http.ClientException {
-      throw const StayNestApiException(
-        'NETWORK_ERROR',
-        'Không thể kết nối đến máy chủ StayNest API ($stayNestApiUrl). Vui lòng kiểm tra backend server đã được khởi chạy chưa (npm run dev --prefix backend).',
-        0,
-      );
     } catch (e) {
       if (e is StayNestApiException) rethrow;
+      final msg = e.toString();
+      if (e is http.ClientException ||
+          msg.contains('Failed to fetch') ||
+          msg.contains('ClientException') ||
+          msg.contains('Connection refused') ||
+          msg.contains('XMLHttpRequest error')) {
+        throw const StayNestApiException(
+          'NETWORK_ERROR',
+          'Không thể kết nối máy chủ StayNest API ($stayNestApiUrl). Hãy kiểm tra backend đã chạy: cd backend && npm run dev',
+          0,
+        );
+      }
       throw StayNestApiException('NETWORK_ERROR', 'Lỗi kết nối mạng: $e', 0);
     }
     final decoded = result.body.isEmpty ? null : jsonDecode(result.body);

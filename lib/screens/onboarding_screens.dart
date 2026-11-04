@@ -1,14 +1,59 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../data/onboarding_controller.dart';
 import '../design/tokens.dart';
 import '../widgets/figma_asset.dart';
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+class SplashScreen extends ConsumerStatefulWidget {
+  const SplashScreen({super.key, this.duration = const Duration(milliseconds: 1200)});
+  final Duration duration;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen> {
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTransition();
+  }
+
+  void _startTransition() {
+    _timer = Timer(widget.duration, _navigateNext);
+  }
+
+  Future<void> _navigateNext() async {
+    if (!mounted) return;
+    final isCompleted =
+        await ref.read(onboardingControllerProvider.notifier).checkCompleted();
+    if (!mounted) return;
+    if (isCompleted) {
+      context.go('/');
+    } else {
+      context.go('/onboarding/1');
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    behavior: HitTestBehavior.opaque,
+    onTap: () {
+      _timer?.cancel();
+      _navigateNext();
+    },
+    child: Scaffold(
     backgroundColor: const Color(0xFF172B4D),
     body: Stack(
       children: [
@@ -141,10 +186,11 @@ class SplashScreen extends StatelessWidget {
         ),
       ],
     ),
-  );
+  ),
+);
 }
 
-class OnboardingScreen extends StatelessWidget {
+class OnboardingScreen extends ConsumerWidget {
   const OnboardingScreen({super.key, required this.step});
   final int step;
 
@@ -166,7 +212,7 @@ class OnboardingScreen extends StatelessWidget {
   static const _iconPrefixes = ['onboarding1', 'onboarding2', 'onboarding3'];
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final index = step.clamp(1, 3) - 1;
     final prefix = _iconPrefixes[index];
     final heroHeight = index == 0
@@ -247,7 +293,12 @@ class OnboardingScreen extends StatelessWidget {
                       top: 56,
                       right: 20,
                       child: TextButton(
-                        onPressed: () => context.go('/welcome'),
+                        onPressed: () {
+                          ref
+                              .read(onboardingControllerProvider.notifier)
+                              .completeOnboarding();
+                          context.go('/welcome');
+                        },
                         child: const Text(
                           'Bỏ qua',
                           style: TextStyle(
@@ -400,11 +451,18 @@ class OnboardingScreen extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                               ),
-                              onPressed: () => context.go(
-                                index == 2
-                                    ? '/welcome'
-                                    : '/onboarding/${index + 2}',
-                              ),
+                              onPressed: () {
+                                if (index == 2) {
+                                  ref
+                                      .read(
+                                        onboardingControllerProvider.notifier,
+                                      )
+                                      .completeOnboarding();
+                                  context.go('/welcome');
+                                } else {
+                                  context.go('/onboarding/${index + 2}');
+                                }
+                              },
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -458,10 +516,10 @@ class OnboardingScreen extends StatelessWidget {
   }
 }
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends ConsumerWidget {
   const WelcomeScreen({super.key});
   @override
-  Widget build(BuildContext context) => Scaffold(
+  Widget build(BuildContext context, WidgetRef ref) => Scaffold(
     backgroundColor: const Color(0xFFF7F9FC),
     body: Padding(
       padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
@@ -554,16 +612,31 @@ class WelcomeScreen extends StatelessWidget {
           _WelcomeButton(
             label: 'Đăng nhập',
             filled: true,
-            onPressed: () => context.push('/login'),
+            onPressed: () {
+              ref
+                  .read(onboardingControllerProvider.notifier)
+                  .completeOnboarding();
+              context.push('/login');
+            },
           ),
           const SizedBox(height: 10),
           _WelcomeButton(
             label: 'Tạo tài khoản',
-            onPressed: () => context.push('/signup'),
+            onPressed: () {
+              ref
+                  .read(onboardingControllerProvider.notifier)
+                  .completeOnboarding();
+              context.push('/signup');
+            },
           ),
           const SizedBox(height: 10),
           TextButton(
-            onPressed: () => context.go('/'),
+            onPressed: () {
+              ref
+                  .read(onboardingControllerProvider.notifier)
+                  .completeOnboarding();
+              context.go('/');
+            },
             child: const Text(
               'Khám phá với tư cách khách',
               style: TextStyle(

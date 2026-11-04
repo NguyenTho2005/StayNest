@@ -304,7 +304,9 @@ void main() {
         ],
       );
 
-      await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+      await tester.pumpWidget(
+        ProviderScope(child: MaterialApp.router(routerConfig: router)),
+      );
       await tester.pumpAndSettle();
 
       final detailButton = find.widgetWithText(FilledButton, 'Xem chi tiết');

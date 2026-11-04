@@ -18,9 +18,21 @@ BoxDecoration _card() => BoxDecoration(
 );
 Widget _row(String label, String value) => Row(
   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  crossAxisAlignment: CrossAxisAlignment.start,
   children: [
-    Text(label, style: const TextStyle(fontSize: 12, color: _muted)),
-    Text(value, style: const TextStyle(fontSize: 12, color: _ink)),
+    Flexible(
+      flex: 2,
+      child: Text(label, style: const TextStyle(fontSize: 12, color: _muted)),
+    ),
+    const SizedBox(width: 8),
+    Flexible(
+      flex: 3,
+      child: Text(
+        value,
+        textAlign: TextAlign.right,
+        style: const TextStyle(fontSize: 12, color: _ink),
+      ),
+    ),
   ],
 );
 Widget _button(String title, VoidCallback? onPressed) => SizedBox(
@@ -141,14 +153,15 @@ class BookingDetailScreen extends StatelessWidget {
                         children: [
                           Row(
                             children: [
-                              Text(
-                                '● Đã xác nhận',
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  color: Color(0xFF0ABC77),
+                              Expanded(
+                                child: Text(
+                                  '● Đã xác nhận',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Color(0xFF0ABC77),
+                                  ),
                                 ),
                               ),
-                              Spacer(),
                               Text(
                                 'MÃ: SN-1024',
                                 style: TextStyle(fontSize: 10, color: _muted),
@@ -234,12 +247,14 @@ class BookingDetailScreen extends StatelessWidget {
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '▣ Lịch trình lưu trú',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: _ink,
+                              Expanded(
+                                child: Text(
+                                  '▣ Lịch trình lưu trú',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _ink,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -293,12 +308,14 @@ class BookingDetailScreen extends StatelessWidget {
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                '▣ Chi tiết thanh toán',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: _ink,
+                              Expanded(
+                                child: Text(
+                                  '▣ Chi tiết thanh toán',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: _ink,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -322,12 +339,14 @@ class BookingDetailScreen extends StatelessWidget {
                           const Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Text(
-                                'Tổng đã thanh toán',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: _ink,
+                              Expanded(
+                                child: Text(
+                                  'Tổng đã thanh toán',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: _ink,
+                                  ),
                                 ),
                               ),
                               Text(
@@ -347,12 +366,14 @@ class BookingDetailScreen extends StatelessWidget {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          'Quản lý đặt phòng',
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: _ink,
+                        Expanded(
+                          child: Text(
+                            'Quản lý đặt phòng',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: _ink,
+                            ),
                           ),
                         ),
                         Text(
@@ -559,9 +580,11 @@ class BookingVoucherScreen extends StatelessWidget {
                     const Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          '✿ Đặt phòng hợp lệ trên StayNest',
-                          style: TextStyle(fontSize: 12, color: _teal),
+                        Expanded(
+                          child: Text(
+                            '✿ Đặt phòng hợp lệ trên StayNest',
+                            style: TextStyle(fontSize: 12, color: _teal),
+                          ),
                         ),
                         Text(
                           '#SN-1024',
@@ -586,12 +609,14 @@ class BookingVoucherScreen extends StatelessWidget {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text(
-                                      '◈ StayNest',
-                                      style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white,
+                                    Expanded(
+                                      child: Text(
+                                        '◈ StayNest',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
                                       ),
                                     ),
                                     Text(
@@ -672,47 +697,51 @@ class BookingVoucherScreen extends StatelessWidget {
                                     mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Mã đặt phòng',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: _muted,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Mã đặt phòng',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: _muted,
+                                              ),
                                             ),
-                                          ),
-                                          Text(
-                                            'SN-1024',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                              color: _ink,
+                                            Text(
+                                              'SN-1024',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color: _ink,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                      Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            'Mã xác nhận',
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: _muted,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.end,
+                                          children: [
+                                            Text(
+                                              'Mã xác nhận',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: _muted,
+                                              ),
                                             ),
-                                          ),
-                                          Text(
-                                            'DEMO-1024',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w700,
-                                              color: _teal,
+                                            Text(
+                                              'DEMO-1024',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w700,
+                                                color: _teal,
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -1473,7 +1502,10 @@ class _ChangeDatesScreenState extends State<ChangeDatesScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    _button('Kiểm tra khả dụng →', null),
+                    _button(
+                      'Kiểm tra khả dụng →',
+                      () => context.push('/trips/booking/change-dates/result-demo'),
+                    ),
                   ],
                 ),
               ),
@@ -1728,7 +1760,12 @@ class ChangeDatesResultScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    _button('Hủy Yêu Cầu', null),
+                    _button(
+                      'Hủy Yêu Cầu',
+                      () => context.canPop()
+                          ? context.pop()
+                          : context.go('/trips/booking'),
+                    ),
                     const SizedBox(height: 12),
                     const Center(
                       child: Text(

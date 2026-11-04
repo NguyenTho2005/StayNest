@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../data/staynest_api.dart';
 
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class PaymentMethodScreen extends ConsumerStatefulWidget {
   const PaymentMethodScreen({super.key});
@@ -26,8 +27,8 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
 
   Future<void> confirmDemoPayment() async {
     final draft = ref.read(bookingDraftProvider);
-    final id = draft.booking?['id'];
-    if (id is! int || busy) {
+    final id = toInt(draft.booking?['id']);
+    if (id <= 0 || busy) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
@@ -64,42 +65,87 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
   );
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFF7F9FC),
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 390),
-        child: Column(
-          children: [
-            Container(
-              height: 56,
-              color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget build(BuildContext context) {
+    final draft = ref.watch(bookingDraftProvider);
+    final booking = draft.booking;
+    final totalVnd = booking?['total_vnd'];
+
+    if (booking == null || totalVnd == null) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F9FC),
+        body: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 390),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  InkWell(
-                    onTap: () => context.canPop()
-                        ? context.pop()
-                        : context.go('/booking/price'),
-                    child: SizedBox(width: 32, child: svg(12, 16, 16)),
-                  ),
+                  const Icon(Icons.info_outline, size: 48, color: teal),
+                  const SizedBox(height: 16),
                   const Text(
-                    'Phương Thức Thanh Toán',
+                    'Chưa có thông tin đơn đặt phòng',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: ink,
                     ),
                   ),
-                  CircleAvatar(
-                    radius: 16,
-                    backgroundColor: teal,
-                    child: svg(13, 12, 12),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Vui lòng hoàn tất bước tính giá để tiếp tục thanh toán.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 13, color: muted),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () => context.go('/booking/price'),
+                    style: ElevatedButton.styleFrom(backgroundColor: teal),
+                    child: const Text(
+                      'Quay lại tính giá',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ],
               ),
             ),
+          ),
+        ),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F9FC),
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 390),
+          child: Column(
+            children: [
+              Container(
+                height: 56,
+                color: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    InkWell(
+                      onTap: () => context.canPop()
+                          ? context.pop()
+                          : context.go('/booking/price'),
+                      child: SizedBox(width: 32, child: svg(12, 16, 16)),
+                    ),
+                    const Text(
+                      'Phương Thức Thanh Toán',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: ink,
+                      ),
+                    ),
+                    const UserAvatarAppBar(size: 32),
+                  ],
+                ),
+              ),
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(20, 19, 20, 8),
@@ -255,6 +301,7 @@ class _PaymentMethodScreenState extends ConsumerState<PaymentMethodScreen> {
       ),
     ),
   );
+}
 
   Widget _summary() => Container(
     padding: const EdgeInsets.all(12),

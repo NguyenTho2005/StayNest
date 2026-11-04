@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/staynest_api.dart';
 
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class BookingStartScreen extends ConsumerStatefulWidget {
   const BookingStartScreen({super.key});
@@ -85,15 +86,7 @@ class _BookingStartScreenState extends ConsumerState<BookingStartScreen> {
                       ),
                     ),
                   ),
-                  const CircleAvatar(
-                    radius: 14,
-                    backgroundColor: teal,
-                    child: Icon(
-                      Icons.person_outline,
-                      color: Colors.white,
-                      size: 15,
-                    ),
-                  ),
+                  const UserAvatarAppBar(size: 28),
                 ],
               ),
             ),

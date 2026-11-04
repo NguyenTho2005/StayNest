@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/staynest_api.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class BookingSummaryScreen extends ConsumerStatefulWidget {
   const BookingSummaryScreen({super.key});
@@ -72,6 +73,14 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
   Widget build(BuildContext context) {
     final draft = ref.read(bookingDraftProvider);
     final nights = draft.checkOut.difference(draft.checkIn).inDays;
+    final isQuoteLoading = quote == null && error == null;
+    final isAvailable =
+        quote != null && toInt(quote!['availableUnits']) >= draft.roomCount;
+    final availabilityMessage = quote == null
+        ? null
+        : isAvailable
+            ? null
+            : 'Không đủ ${draft.roomCount} phòng cho ngày đã chọn.';
     final roomSubtotal = quote?['roomSubtotalVnd'];
     final nightly = quote?['nightlyPriceVnd'];
     final priceLabel = roomSubtotal == null
@@ -106,15 +115,7 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                         ),
                       ),
                     ),
-                    const CircleAvatar(
-                      radius: 11,
-                      backgroundColor: teal,
-                      child: Icon(
-                        Icons.person_outline,
-                        size: 13,
-                        color: Colors.white,
-                      ),
-                    ),
+                    const UserAvatarAppBar(size: 22),
                   ],
                 ),
               ),
@@ -126,15 +127,16 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                     children: [
                       const Row(
                         children: [
-                          Text(
-                            'Tiến trình đặt chỗ',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: ink,
+                          Expanded(
+                            child: Text(
+                              'Tiến trình đặt chỗ',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: ink,
+                              ),
                             ),
                           ),
-                          Spacer(),
                           Text(
                             'Bước 1/3',
                             style: TextStyle(fontSize: 10, color: teal),
@@ -324,15 +326,16 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                           children: [
                             const Row(
                               children: [
-                                Text(
-                                  'Chi tiết tạm tính',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: ink,
+                                Expanded(
+                                  child: Text(
+                                    'Chi tiết tạm tính',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: ink,
+                                    ),
                                   ),
                                 ),
-                                Spacer(),
                                 Text(
                                   'VND (₫)',
                                   style: TextStyle(fontSize: 10, color: teal),
@@ -341,28 +344,71 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                             ),
                             const SizedBox(height: 10),
                             if (error != null) ...[
-                              Text(
-                                error!,
-                                style: const TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 11,
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEE4E2),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.error_outline,
+                                      color: Color(0xFFD92D20),
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        error!,
+                                        style: const TextStyle(
+                                          color: Color(0xFFD92D20),
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: loadQuote,
+                                      child: const Text('Thử lại'),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              TextButton(
-                                onPressed: loadQuote,
-                                child: const Text('Thử lại'),
-                              ),
+                              const SizedBox(height: 10),
                             ],
-                            if (quote != null &&
-                                toInt(quote!['availableUnits']) <
-                                    draft.roomCount)
-                              const Text(
-                                'Không đủ phòng cho ngày đã chọn.',
-                                style: TextStyle(
-                                  color: Colors.red,
-                                  fontSize: 11,
+                            if (availabilityMessage != null) ...[
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFFEF3F2),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: const Color(0xFFFDA29B),
+                                  ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.warning_amber_rounded,
+                                      color: Color(0xFFD92D20),
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        availabilityMessage,
+                                        style: const TextStyle(
+                                          color: Color(0xFFB42318),
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
+                              const SizedBox(height: 10),
+                            ],
                             _price(
                               nightly == null
                                   ? 'Giá phòng cơ bản'
@@ -374,15 +420,17 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                             const Divider(height: 20, color: Color(0xFFEAF0FE)),
                             Row(
                               children: [
-                                const Text(
-                                  'Tổng cộng tạm tính',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600,
-                                    color: ink,
+                                const Expanded(
+                                  child: Text(
+                                    'Tổng cộng tạm tính',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: ink,
+                                    ),
                                   ),
                                 ),
-                                const Spacer(),
+                                const SizedBox(width: 8),
                                 Text(
                                   priceLabel,
                                   style: const TextStyle(
@@ -472,21 +520,26 @@ class _BookingSummaryScreenState extends ConsumerState<BookingSummaryScreen> {
                       height: 40,
                       child: ElevatedButton(
                         onPressed:
-                            quote == null ||
-                                toInt(quote!['availableUnits']) <
-                                    draft.roomCount
+                            (!isAvailable || isQuoteLoading || error != null)
                             ? null
                             : () => context.push('/booking/start'),
                         style: ElevatedButton.styleFrom(
-                          disabledBackgroundColor: teal,
+                          backgroundColor: teal,
+                          disabledBackgroundColor: const Color(0xFFCFD8DC),
                           disabledForegroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(9),
                           ),
                         ),
-                        child: const Text(
-                          'Tiếp tục đặt phòng →',
-                          style: TextStyle(fontSize: 10),
+                        child: Text(
+                          isQuoteLoading
+                              ? 'Đang tải…'
+                              : error != null
+                                  ? 'Lỗi tải phòng'
+                                  : !isAvailable
+                                      ? 'Không đủ phòng'
+                                      : 'Tiếp tục đặt phòng →',
+                          style: const TextStyle(fontSize: 10),
                         ),
                       ),
                     ),

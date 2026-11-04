@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/staynest_api.dart';
 import '../design/tokens.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -60,26 +61,11 @@ class ProfileScreen extends ConsumerWidget {
                       child: Column(
                         children: [
                           const SizedBox(height: 4),
-                          Container(
-                            width: 84,
-                            height: 84,
-                            decoration: BoxDecoration(
-                              color: StayNestColors.paleTeal,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: const Color(0xFFEAF7F6),
-                                width: 5,
-                              ),
-                            ),
-                            alignment: Alignment.center,
-                            child: const Text(
-                              'ND',
-                              style: TextStyle(
-                                fontSize: 26,
-                                height: 32 / 26,
-                                fontWeight: FontWeight.w700,
-                                color: StayNestColors.teal,
-                              ),
+                          UserAvatarAppBar(
+                            size: 84,
+                            border: Border.all(
+                              color: const Color(0xFFEAF7F6),
+                              width: 5,
                             ),
                           ),
                           const SizedBox(height: 7),

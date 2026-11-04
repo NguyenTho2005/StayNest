@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../data/staynest_api.dart';
+import '../utils/date_formatters.dart';
 
 class LiveTripDetailScreen extends ConsumerStatefulWidget {
   const LiveTripDetailScreen({super.key, required this.bookingId});
@@ -256,7 +257,10 @@ class _LiveTripDetailScreenState extends ConsumerState<LiveTripDetailScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          '${booking['check_in_date']} – ${booking['check_out_date']}',
+                          formatStayDateRange(
+                            booking['check_in_date'],
+                            booking['check_out_date'],
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text('Trạng thái: $status'),
@@ -274,31 +278,84 @@ class _LiveTripDetailScreenState extends ConsumerState<LiveTripDetailScreen> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 12),
+                ListTile(
+                  tileColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  leading: const Icon(
+                    Icons.confirmation_number_outlined,
+                    color: teal,
+                  ),
+                  title: const Text('Xem voucher xác nhận'),
+                  subtitle: const Text('SCR-083: Mã đặt và QR'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => context.push('/trips/booking/voucher'),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  tileColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  leading: const Icon(Icons.directions_outlined, color: teal),
+                  title: const Text('Chỉ đường & Liên hệ host'),
+                  subtitle: const Text('SCR-084: Bản đồ & Chat'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => context.push('/trips/booking/directions'),
+                ),
+                const SizedBox(height: 8),
+                ListTile(
+                  tileColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  leading: const Icon(Icons.help_outline, color: teal),
+                  title: const Text('Trung tâm trợ giúp 24/7'),
+                  subtitle: const Text('SCR-096: FAQ & Chat hỗ trợ'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 14),
+                  onTap: () => context.push('/trips/help'),
+                ),
                 if (status == 'CONFIRMED_DEMO') ...[
                   const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: busy ? null : () => runAction(requestChange),
-                    child: const Text('Yêu cầu đổi ngày'),
+                    onPressed: busy
+                        ? null
+                        : () => context.push('/trips/booking/change-dates'),
+                    child: const Text('Yêu cầu đổi ngày (SCR-085)'),
                   ),
                 ],
                 if (status == 'CONFIRMED_DEMO' ||
                     status == 'PENDING_PAYMENT') ...[
                   const SizedBox(height: 8),
                   OutlinedButton(
-                    onPressed: busy ? null : () => runAction(cancel),
-                    child: const Text('Hủy đặt phòng'),
+                    onPressed: busy
+                        ? null
+                        : () => context.push('/trips/booking/cancel'),
+                    child: const Text('Hủy đặt phòng (SCR-087)'),
                   ),
                 ],
-                if (status == 'CANCELLED')
+                if (status == 'CANCELLED') ...[
+                  const SizedBox(height: 8),
                   OutlinedButton(
-                    onPressed: busy ? null : () => runAction(showRefund),
-                    child: const Text('Theo dõi hoàn tiền mô phỏng'),
+                    onPressed: () =>
+                        context.push('/trips/refund-tracking-demo'),
+                    child: const Text('Theo dõi hoàn tiền (SCR-092)'),
                   ),
-                if (canReview)
+                ],
+                if (canReview) ...[
+                  const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: busy ? null : () => runAction(writeReview),
-                    child: const Text('Viết đánh giá'),
+                    onPressed: () => context.push('/trips/completed/review'),
+                    child: const Text('Viết đánh giá (SCR-095)'),
                   ),
+                ],
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => context.push('/trips/overview-demo'),
+                  child: const Text('Xem tổng kết hành trình (SCR-100) →'),
+                ),
               ],
             );
           },

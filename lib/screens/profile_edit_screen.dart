@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/staynest_api.dart';
 import '../design/tokens.dart';
 import '../widgets/figma_asset.dart';
+import '../widgets/user_avatar_app_bar.dart';
 
 class ProfileEditScreen extends ConsumerStatefulWidget {
   const ProfileEditScreen({super.key});
@@ -49,6 +50,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     }
   }
 
+  void _closeEditor() {
+    if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/profile');
+    }
+  }
+
   Future<void> _save() async {
     final parts = _birthDate.text.trim().split('/');
     String? date;
@@ -71,7 +80,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       if (date != null) changes['birthDate'] = date;
       await ref.read(stayNestApiProvider).updateMe(changes);
       ref.invalidate(currentUserProvider);
-      if (mounted) context.go('/profile');
+      if (mounted) _closeEditor();
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context)
@@ -91,14 +100,19 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   }
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: StayNestColors.white,
-    body: Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 390),
-        child: Column(
-          children: [
-            const _EditHeader(),
+  Widget build(BuildContext context) => PopScope(
+    canPop: false,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) _closeEditor();
+    },
+    child: Scaffold(
+      backgroundColor: StayNestColors.white,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 390),
+          child: Column(
+            children: [
+              _EditHeader(onBack: _closeEditor),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
@@ -106,8 +120,11 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Container(
-                      height: 60,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      constraints: const BoxConstraints(minHeight: 60),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
                         color: StayNestColors.paleTeal,
                         borderRadius: BorderRadius.circular(12),
@@ -485,7 +502,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               ),
             ),
             TextButton(
-              onPressed: () => context.pop(),
+              onPressed: _closeEditor,
               child: const Text(
                 'Hủy',
                 style: TextStyle(
@@ -499,11 +516,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         ),
       ),
     ),
-  );
+  ),
+);
 }
 
 class _EditHeader extends StatelessWidget {
-  const _EditHeader();
+  const _EditHeader({required this.onBack});
+  final VoidCallback onBack;
+
   @override
   Widget build(BuildContext context) => SizedBox(
     height: 56,
@@ -512,14 +532,21 @@ class _EditHeader extends StatelessWidget {
       child: Row(
         children: [
           InkWell(
-            onTap: () => context.pop(),
-            child: const FigmaSvg(
-              'assets/icons/profile_edit_11.svg',
-              width: 16,
-              height: 16,
+            onTap: onBack,
+            borderRadius: BorderRadius.circular(22),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Center(
+                child: FigmaSvg(
+                  'assets/icons/profile_edit_11.svg',
+                  width: 16,
+                  height: 16,
+                ),
+              ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 8),
           const Expanded(
             child: Text(
               'Chỉnh Sửa Hồ Sơ',
@@ -531,20 +558,7 @@ class _EditHeader extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            width: 30,
-            height: 30,
-            decoration: const BoxDecoration(
-              color: StayNestColors.teal,
-              shape: BoxShape.circle,
-            ),
-            alignment: Alignment.center,
-            child: const FigmaSvg(
-              'assets/icons/profile_edit_12.svg',
-              width: 12,
-              height: 12,
-            ),
-          ),
+          const UserAvatarAppBar(size: 30),
         ],
       ),
     ),

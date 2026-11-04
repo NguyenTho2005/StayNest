@@ -1117,7 +1117,14 @@ class _WriteReviewScreenState extends State<WriteReviewScreen> {
               padding: const EdgeInsets.fromLTRB(38, 10, 38, 16),
               child: Column(
                 children: [
-                  _button('Gửi đánh giá ▷', null),
+                  _button('Gửi đánh giá ▷', () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Đánh giá của bạn đã được ghi nhận.'),
+                      ),
+                    );
+                    context.go('/trips/completed-demo');
+                  }),
                   TextButton(
                     onPressed: () => context.go('/trips/completed-demo'),
                     child: const Text(
