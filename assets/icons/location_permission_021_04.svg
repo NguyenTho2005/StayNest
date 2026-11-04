@@ -1,0 +1,14 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="350" height="220" viewBox="0 0 350 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Ambient Map Roads (SVG vector graphic)" clip-path="url(#clip0_0_19)">
+<path id="Vector" d="M-20 60C80 60 110 130 240 120C320 115 380 40 420 30" stroke-width="18" stroke-linecap="round" stroke="#E6EEFF"/>
+<path id="Vector_2" d="M120 -10C130 90 190 140 230 230" stroke-width="14" stroke-linecap="round" stroke="#E6EEFF"/>
+<path id="Vector_3" d="M-10 170C90 150 180 200 390 180" stroke-width="12" stroke-linecap="round" stroke="#E6EEFF"/>
+<path id="Vector_4" d="M252 50C252 65.4536 264.546 78 280 78C295.454 78 308 65.4536 308 50C308 34.5464 295.454 22 280 22C264.546 22 252 34.5464 252 50V50" fill="#DFE9FC"/>
+<path id="Vector_5" d="M62 170C62 179.934 70.0655 188 80 188C89.9345 188 98 179.934 98 170C98 160.066 89.9345 152 80 152C70.0655 152 62 160.066 62 170V170" fill="#DFE9FC"/>
+</g>
+<defs>
+<clipPath id="clip0_0_19">
+<rect width="350" height="220" fill="white"/>
+</clipPath>
+</defs>
+</svg>
